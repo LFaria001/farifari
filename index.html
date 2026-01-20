@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>farifari | Startup Builder</title>
+  <title>farifari | Think. Build. Ship. 🚀</title>
+  <meta name="description" content="I think of problems, build things and ship them. Follow along as I build in public.">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="farifari | Think. Build. Ship. 🚀">
+  <meta property="og:description" content="I think of problems, build things and ship them. Follow along as I build in public.">
+  <meta property="og:image" content="https://farifari.com/ProfilePicture.jpeg">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="farifari | Think. Build. Ship. 🚀">
+  <meta name="twitter:description" content="I think of problems, build things and ship them. Follow along as I build in public.">
+  <meta name="twitter:image" content="https://farifari.com/ProfilePicture.jpeg">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+
   <style>
     * {
       box-sizing: border-box;
@@ -100,31 +117,12 @@
       height: 10px;
       background-color: #4caf50;
       border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    /* Interests */
-    .interests {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 40px;
-    }
-
-    .interest-chip {
-      font-size: 16px;
-      padding: 12px 20px;
-      background-color: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 24px;
-      color: #555;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .interest-chip:hover {
-      background: #000;
-      color: #fff;
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
     }
 
     /* Section Labels */
@@ -235,11 +233,15 @@
       line-height: 1.7;
     }
 
-    /* Footer */
-    .footer {
-      text-align: center;
-      font-size: 16px;
-      color: #bbb;
+    .about-box a {
+      color: #667eea;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .about-box a:hover {
+      color: #764ba2;
+      text-decoration: underline;
     }
 
     /* Sections spacing */
@@ -271,8 +273,16 @@
       </div>
     </div>
 
+    <!-- About Section -->
+    <div class="about-box animate delay-2">
+      <p class="section-label">About Me</p>
+      <p>
+        I think of problems, build things and ship them. I'm currently working on <a href="https://farifari.com/wikimeaty/"><strong>Wiki Meaty 🥩</strong></a> and growing my audience online, so follow along.
+      </p>
+    </div>
+
     <!-- Projects -->
-    <div class="section animate delay-2">
+    <div class="section animate delay-3">
       <p class="section-label">My Projects</p>
       
       <a href="https://farifari.com/wikimeaty/" class="card">
@@ -294,7 +304,7 @@
     </div>
 
     <!-- Social Links -->
-    <div class="section socials animate delay-3">
+    <div class="section socials animate delay-4">
       <p class="section-label">Follow Me</p>
       
       <a href="https://x.com/LFaria001" class="social-card">
@@ -332,15 +342,16 @@
       </a>
     </div>
 
-    <!-- About Section -->
-    <div class="about-box animate delay-4">
-      <p class="section-label">About Me</p>
-      <p>
-        I think of problems, build things and ship them. I'm currently working on <a href="https://farifari.com/wikimeaty/"><strong>Wiki Meaty 🥩</strong></a> and growing my audience online, so follow along.
-      </p>
-    </div>
-
   </div>
+
+  <!-- Google Analytics - Replace G-XXXXXXXXXX with your measurement ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
 
 </body>
 </html>
