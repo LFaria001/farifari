@@ -18,16 +18,14 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥩</text></svg>">
 
-    <!-- Open Graph / Social - TODO: Update URLs and add og-image.jpg -->
+    <!-- Open Graph / Social -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://farifari.com/wikimeaty/">
     <meta property="og:title" content="Wiki Meaty - The World's First Crowdsourced Meat Encyclopedia">
     <meta property="og:description" content="Help us build the ultimate guide to meat cuts, cooking methods, and recipes.">
-    <meta property="og:image" content="https://farifari.com/wikimeaty/og-image.jpg">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Wiki Meaty - Crowdsourced Meat Encyclopedia">
     <meta name="twitter:description" content="Help us build the ultimate guide to meat cuts, cooking methods, and recipes.">
-    <meta name="twitter:image" content="https://farifari.com/wikimeaty/og-image.jpg">
 
     <link rel="preconnect" href="https://flagcdn.com">
     <style>
@@ -619,10 +617,8 @@
             if (contributeModal.classList.contains('active')) closeContribute();
         });
 
-        // TODO: Replace YOUR_FORMSPREE_ID with your actual Formspree form ID
-        // Sign up at https://formspree.io to get your form endpoint
-        const FORMSPREE_WAITLIST = 'https://formspree.io/f/YOUR_WAITLIST_FORM_ID';
-        const FORMSPREE_CONTRIBUTE = 'https://formspree.io/f/YOUR_CONTRIBUTE_FORM_ID';
+        const FORMSPREE_WAITLIST = 'https://formspree.io/f/mykknkow';
+        const FORMSPREE_CONTRIBUTE = 'https://formspree.io/f/meeerenz';
 
         contributeForm.addEventListener('submit', async e => {
             e.preventDefault();
