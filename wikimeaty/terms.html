@@ -136,8 +136,8 @@
     </nav>
 
     <div class="content">
-        <a href="index.html" class="back-btn">← Back to Home</a>
-        <h1>Terms of Service</h1>
+        <a href="index.html" class="back-btn" id="backBtn">← Back to Home</a>
+        <h1 id="pageTitle">Terms of Service</h1>
         <p class="update-date">Last Updated: January 17, 2026</p>
 
         <h2>1. Agreement to Terms</h2>
@@ -210,7 +210,38 @@
     </div>
 
     <footer>
-        <p>&copy; 2026 Wiki Meaty. All rights reserved.</p>
+        <p id="footerTxt">&copy; 2026 Wiki Meaty. All rights reserved.</p>
     </footer>
+
+    <script>
+        const t = {
+            en: { pageTitle: 'Terms of Service', backBtn: '← Back to Home', footerTxt: '© 2026 Wiki Meaty. All rights reserved.' },
+            us: { pageTitle: 'Terms of Service', backBtn: '← Back to Home', footerTxt: '© 2026 Wiki Meaty. All rights reserved.' },
+            es: { pageTitle: 'Términos de Servicio', backBtn: '← Volver al Inicio', footerTxt: '© 2026 Wiki Meaty.' },
+            fr: { pageTitle: 'Conditions d\'Utilisation', backBtn: '← Retour à l\'accueil', footerTxt: '© 2026 Wiki Meaty.' },
+            de: { pageTitle: 'Nutzungsbedingungen', backBtn: '← Zurück zur Startseite', footerTxt: '© 2026 Wiki Meaty.' },
+            it: { pageTitle: 'Termini di Servizio', backBtn: '← Torna alla Home', footerTxt: '© 2026 Wiki Meaty.' },
+            pt: { pageTitle: 'Termos de Serviço', backBtn: '← Voltar ao Início', footerTxt: '© 2026 Wiki Meaty.' },
+            'pt-br': { pageTitle: 'Termos de Serviço', backBtn: '← Voltar ao Início', footerTxt: '© 2026 Wiki Meaty.' },
+            nl: { pageTitle: 'Servicevoorwaarden', backBtn: '← Terug naar Home', footerTxt: '© 2026 Wiki Meaty.' },
+            pl: { pageTitle: 'Warunki Korzystania', backBtn: '← Powrót do strony głównej', footerTxt: '© 2026 Wiki Meaty.' },
+            ru: { pageTitle: 'Условия Использования', backBtn: '← Вернуться на главную', footerTxt: '© 2026 Wiki Meaty.' },
+            ja: { pageTitle: '利用規約', backBtn: '← ホームに戻る', footerTxt: '© 2026 Wiki Meaty.' },
+            zh: { pageTitle: '服务条款', backBtn: '← 返回首页', footerTxt: '© 2026 Wiki Meaty.' },
+            ko: { pageTitle: '서비스 약관', backBtn: '← 홈으로 돌아가기', footerTxt: '© 2026 Wiki Meaty.' },
+            ar: { pageTitle: 'شروط الخدمة', backBtn: '← العودة إلى الصفحة الرئيسية', footerTxt: '© 2026 Wiki Meaty.' }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('wikimeaty_lang');
+            if (saved && t[saved]) {
+                const d = t[saved];
+                document.getElementById('pageTitle').textContent = d.pageTitle;
+                document.getElementById('backBtn').textContent = d.backBtn;
+                document.getElementById('footerTxt').textContent = d.footerTxt;
+                document.title = d.pageTitle + ' - Wiki Meaty';
+            }
+        });
+    </script>
 </body>
 </html>

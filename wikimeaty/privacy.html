@@ -136,8 +136,8 @@
     </nav>
 
     <div class="content">
-        <a href="index.html" class="back-btn">← Back to Home</a>
-        <h1>Privacy Policy</h1>
+        <a href="index.html" class="back-btn" id="backBtn">← Back to Home</a>
+        <h1 id="pageTitle">Privacy Policy</h1>
         <p class="update-date">Last Updated: January 17, 2026</p>
 
         <h2>1. Introduction</h2>
@@ -203,7 +203,38 @@
     </div>
 
     <footer>
-        <p>&copy; 2026 Wiki Meaty. All rights reserved.</p>
+        <p id="footerTxt">&copy; 2026 Wiki Meaty. All rights reserved.</p>
     </footer>
+
+    <script>
+        const t = {
+            en: { pageTitle: 'Privacy Policy', backBtn: '← Back to Home', footerTxt: '© 2026 Wiki Meaty. All rights reserved.' },
+            us: { pageTitle: 'Privacy Policy', backBtn: '← Back to Home', footerTxt: '© 2026 Wiki Meaty. All rights reserved.' },
+            es: { pageTitle: 'Política de Privacidad', backBtn: '← Volver al Inicio', footerTxt: '© 2026 Wiki Meaty.' },
+            fr: { pageTitle: 'Politique de Confidentialité', backBtn: '← Retour à l\'accueil', footerTxt: '© 2026 Wiki Meaty.' },
+            de: { pageTitle: 'Datenschutzrichtlinie', backBtn: '← Zurück zur Startseite', footerTxt: '© 2026 Wiki Meaty.' },
+            it: { pageTitle: 'Informativa sulla Privacy', backBtn: '← Torna alla Home', footerTxt: '© 2026 Wiki Meaty.' },
+            pt: { pageTitle: 'Política de Privacidade', backBtn: '← Voltar ao Início', footerTxt: '© 2026 Wiki Meaty.' },
+            'pt-br': { pageTitle: 'Política de Privacidade', backBtn: '← Voltar ao Início', footerTxt: '© 2026 Wiki Meaty.' },
+            nl: { pageTitle: 'Privacybeleid', backBtn: '← Terug naar Home', footerTxt: '© 2026 Wiki Meaty.' },
+            pl: { pageTitle: 'Polityka Prywatności', backBtn: '← Powrót do strony głównej', footerTxt: '© 2026 Wiki Meaty.' },
+            ru: { pageTitle: 'Политика Конфиденциальности', backBtn: '← Вернуться на главную', footerTxt: '© 2026 Wiki Meaty.' },
+            ja: { pageTitle: 'プライバシーポリシー', backBtn: '← ホームに戻る', footerTxt: '© 2026 Wiki Meaty.' },
+            zh: { pageTitle: '隐私政策', backBtn: '← 返回首页', footerTxt: '© 2026 Wiki Meaty.' },
+            ko: { pageTitle: '개인정보 처리방침', backBtn: '← 홈으로 돌아가기', footerTxt: '© 2026 Wiki Meaty.' },
+            ar: { pageTitle: 'سياسة الخصوصية', backBtn: '← العودة إلى الصفحة الرئيسية', footerTxt: '© 2026 Wiki Meaty.' }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('wikimeaty_lang');
+            if (saved && t[saved]) {
+                const d = t[saved];
+                document.getElementById('pageTitle').textContent = d.pageTitle;
+                document.getElementById('backBtn').textContent = d.backBtn;
+                document.getElementById('footerTxt').textContent = d.footerTxt;
+                document.title = d.pageTitle + ' - Wiki Meaty';
+            }
+        });
+    </script>
 </body>
 </html>
