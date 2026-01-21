@@ -261,6 +261,174 @@
     .section.socials {
       margin-bottom: 48px;
     }
+
+    /* Chat Widget */
+    .chat-widget {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      font-family: inherit;
+    }
+
+    .chat-bubble {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .chat-bubble:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px rgba(102, 126, 234, 0.5);
+    }
+
+    .chat-bubble svg {
+      width: 28px;
+      height: 28px;
+      fill: #fff;
+      transition: transform 0.3s ease;
+    }
+
+    .chat-bubble.active svg {
+      transform: rotate(90deg);
+    }
+
+    .chat-panel {
+      position: absolute;
+      bottom: 76px;
+      right: 0;
+      width: 320px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px) scale(0.95);
+      transition: all 0.3s ease;
+    }
+
+    .chat-panel.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 14px 16px;
+      color: #fff;
+    }
+
+    .chat-header-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .chat-header-subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .chat-body {
+      padding: 14px;
+    }
+
+    .chat-message {
+      background: #f5f5f5;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    .chat-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-form input,
+    .chat-form textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-form input:focus,
+    .chat-form textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .chat-form textarea {
+      min-height: 50px;
+      resize: none;
+    }
+
+    .chat-form button {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .chat-form button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .chat-success {
+      display: none;
+      text-align: center;
+      padding: 16px;
+    }
+
+    .chat-success-icon {
+      font-size: 40px;
+      margin-bottom: 8px;
+    }
+
+    .chat-success-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2e7d32;
+      margin-bottom: 4px;
+    }
+
+    .chat-success-sub {
+      font-size: 12px;
+      color: #666;
+    }
+
+    @media (max-width: 400px) {
+      .chat-panel {
+        width: calc(100vw - 48px);
+        right: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -344,14 +512,96 @@
         </span>
         Instagram
       </a>
-
-      <a href="mailto:LMVFaria001@gmail.com" class="social-card">
-        <span class="social-icon" style="color: #EA4335;">✉</span>
-        Email me
-      </a>
     </div>
 
   </div>
+
+  <!-- Chat Widget -->
+  <div class="chat-widget">
+    <div class="chat-panel" id="chatPanel">
+      <div class="chat-header">
+        <div class="chat-header-title">Say Hi!</div>
+        <div class="chat-header-subtitle">I'd love to hear from you</div>
+      </div>
+      <div class="chat-body">
+        <div class="chat-message">
+          Hey! Drop me a message below.
+        </div>
+        <form class="chat-form" id="chatForm" action="https://formspree.io/f/mjggpyeb" method="POST">
+          <input type="text" name="name" placeholder="Your name (optional)">
+          <input type="email" name="email" placeholder="Your email (optional)">
+          <textarea name="message" placeholder="Type your message..." required></textarea>
+          <button type="submit">Send Message</button>
+        </form>
+        <div class="chat-success" id="chatSuccess">
+          <div class="chat-success-icon">🎉</div>
+          <div class="chat-success-text">Message sent!</div>
+          <div class="chat-success-sub">Thanks for reaching out. I'll get back to you soon!</div>
+        </div>
+      </div>
+    </div>
+    <button class="chat-bubble" id="chatBubble" aria-label="Open chat">
+      <svg viewBox="0 0 24 24" id="chatIcon">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+        <path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const chatBubble = document.getElementById('chatBubble');
+    const chatPanel = document.getElementById('chatPanel');
+    const chatForm = document.getElementById('chatForm');
+    const chatSuccess = document.getElementById('chatSuccess');
+    const chatIcon = document.getElementById('chatIcon');
+
+    // Toggle chat panel
+    chatBubble.addEventListener('click', () => {
+      chatPanel.classList.toggle('active');
+      chatBubble.classList.toggle('active');
+
+      // Change icon when open
+      if (chatPanel.classList.contains('active')) {
+        chatIcon.innerHTML = '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>';
+      } else {
+        chatIcon.innerHTML = '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/>';
+      }
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.chat-widget')) {
+        chatPanel.classList.remove('active');
+        chatBubble.classList.remove('active');
+        chatIcon.innerHTML = '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/>';
+      }
+    });
+
+    // Form submission
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(chatForm);
+
+      try {
+        const response = await fetch(chatForm.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          chatForm.style.display = 'none';
+          chatSuccess.style.display = 'block';
+          chatForm.reset();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+  </script>
 
 </body>
 </html>
