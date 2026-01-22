@@ -387,7 +387,8 @@
         }
 
         .contribute-form input,
-        .contribute-form textarea {
+        .contribute-form textarea,
+        .contribute-form select {
             width: 100%;
             padding: 0.9rem 1rem;
             border: 1px solid rgba(255,179,102,0.2);
@@ -395,6 +396,19 @@
             border-radius: 12px;
             color: #fff;
             font-size: 1rem;
+        }
+
+        .contribute-form select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23ffb366' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+        }
+
+        .contribute-form select option {
+            background: #1a1a1a;
+            color: #fff;
         }
 
         .contribute-form textarea {
@@ -519,7 +533,13 @@
             <form class="contribute-form" id="contributeForm">
                 <input type="text" name="name" placeholder="Your name" required>
                 <input type="email" name="email" placeholder="Your email" required>
-                <textarea name="idea" placeholder="What would you like to contribute?" required></textarea>
+                <select name="type" required>
+                    <option value="" disabled selected hidden>What would you like to contribute?</option>
+                    <option value="Name of Cut">Name of Cut</option>
+                    <option value="Recipe">Recipe</option>
+                    <option value="Feedback">Feedback</option>
+                </select>
+                <textarea name="idea" placeholder="We want to hear from you..." required></textarea>
                 <div class="contribute-actions">
                     <button type="button" class="contribute-close" id="contributeClose">Close</button>
                     <button type="submit" class="contribute-submit">Send</button>
