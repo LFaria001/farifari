@@ -443,6 +443,47 @@
             font-weight: 600;
         }
 
+        .contribute-success {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .contribute-success.active {
+            display: block;
+        }
+
+        .contribute-success .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .contribute-success h4 {
+            font-size: 1.5rem;
+            color: #ffb366;
+            margin-bottom: 0.5rem;
+        }
+
+        .contribute-success p {
+            color: #aaa;
+            margin-bottom: 1.5rem;
+        }
+
+        .contribute-success .success-close {
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .contribute-success .success-close:hover {
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 768px) {
             .form-flex { flex-direction: column; }
         }
@@ -528,6 +569,12 @@
 
     <div class="contribute-modal" id="contributeModal" aria-hidden="true">
         <div class="contribute-panel" role="dialog" aria-modal="true" aria-labelledby="contributeTitleModal">
+            <div class="contribute-success" id="contributeSuccess">
+                <div class="success-icon">🎉</div>
+                <h4 id="successTitle">Thank you!</h4>
+                <p id="successMessage">We'll be in touch soon.</p>
+                <button type="button" class="success-close" id="successCloseBtn">Close</button>
+            </div>
             <h3 id="contributeTitleModal">Become a Contributor</h3>
             <p>Tell us what you'd like to contribute and we'll follow up.</p>
             <form class="contribute-form" id="contributeForm">
@@ -550,21 +597,21 @@
 
     <script>
         const t = {
-            en: { name: 'English (UK)', flag: 'gb', badge: '🚀 Launching Soon', title: 'The World\'s First Crowdsourced Meat Encyclopedia', subtitle: 'Help us build the ultimate guide to meat cuts, cooking methods, and recipes. Be part of something delicious.', joinBtn: 'Join Waitlist', note: 'Get early access and exclusive updates. No spam, ever.', successTxt: 'You\'re on the list! Check your email.', growingWaitlist: 'Join our growing waitlist', whyTitle: 'Why Wiki Meaty?', card1Title: 'Crowdsourced Knowledge', card1Text: 'Built by chefs, butchers, and meat lovers worldwide. Real expertise from real people.', card2Title: 'Comprehensive Database', card2Text: 'Every cut, every cooking method, every recipe - all in one searchable platform.', contributeTitle: 'Help Us Build It', contributeSub: 'Have expertise in meat cuts, butchery, or cooking? We need you! Contribute and get early contributor benefits.', contributeBtn: 'Become a Contributor', footerTxt: '© 2026 Wiki Meaty. All rights reserved.', privacyLink: 'Privacy', termsLink: 'Terms', selectValidation: 'Please select an option from the list.' },
-            us: { name: 'English (US)', flag: 'us', badge: '🚀 Launching Soon', title: 'The World\'s First Crowdsourced Meat Encyclopedia', subtitle: 'Help us build the ultimate guide to meat cuts, cooking methods, and recipes. Be part of something delicious.', joinBtn: 'Join Waitlist', note: 'Get early access and exclusive updates. No spam, ever.', successTxt: 'You\'re on the list! Check your email.', growingWaitlist: 'Join our growing waitlist', whyTitle: 'Why Wiki Meaty?', card1Title: 'Crowdsourced Knowledge', card1Text: 'Built by chefs, butchers, and meat lovers worldwide. Real expertise from real people.', card2Title: 'Comprehensive Database', card2Text: 'Every cut, every cooking method, every recipe - all in one searchable platform.', contributeTitle: 'Help Us Build It', contributeSub: 'Have expertise in meat cuts, butchery, or cooking? We need you! Contribute and get early contributor benefits.', contributeBtn: 'Become a Contributor', footerTxt: '© 2026 Wiki Meaty. All rights reserved.', privacyLink: 'Privacy', termsLink: 'Terms', selectValidation: 'Please select an option from the list.' },
-            es: { name: 'Español', flag: 'es', badge: '🚀 Próximamente', title: 'La Primera Enciclopedia Colaborativa de Carne', subtitle: 'Ayúdanos a construir la guía definitiva. Sé parte de algo delicioso.', joinBtn: 'Unirse', note: 'Acceso anticipado y actualizaciones. Sin spam.', successTxt: '¡Estás en la lista!', growingWaitlist: 'Únete a nuestra lista de espera', whyTitle: '¿Por Qué Wiki Meaty?', card1Title: 'Conocimiento Colaborativo', card1Text: 'Construido por chefs y carniceros. Experiencia real.', card2Title: 'Base Completa', card2Text: 'Cada corte, método y receta en una plataforma.', contributeTitle: 'Ayúdanos', contributeSub: '¿Tienes experiencia? ¡Te necesitamos!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidad', termsLink: 'Términos', selectValidation: 'Por favor, selecciona una opción de la lista.' },
-            fr: { name: 'Français', flag: 'fr', badge: '🚀 Bientôt', title: 'La Première Encyclopédie Collaborative', subtitle: 'Aidez-nous à construire le guide ultime. Faites partie de quelque chose de délicieux.', joinBtn: 'Rejoindre', note: 'Accès anticipé. Jamais de spam.', successTxt: 'Vous êtes sur la liste!', growingWaitlist: 'Rejoignez notre liste d\'attente', whyTitle: 'Pourquoi?', card1Title: 'Collaboratif', card1Text: 'Construit par des chefs et bouchers.', card2Title: 'Complet', card2Text: 'Chaque découpe, méthode, recette.', contributeTitle: 'Aidez-Nous', contributeSub: 'Expertise? Nous avons besoin de vous!', contributeBtn: 'Contribuer', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Confidentialité', termsLink: 'Conditions', selectValidation: 'Veuillez sélectionner une option dans la liste.' },
-            de: { name: 'Deutsch', flag: 'de', badge: '🚀 Bald verfügbar', title: 'Die erste kollaborative Fleisch-Enzyklopädie', subtitle: 'Hilf mit, den ultimativen Leitfaden zu erstellen.', joinBtn: 'Beitreten', note: 'Früher Zugang. Kein Spam.', successTxt: 'Du bist dabei!', growingWaitlist: 'Tritt unserer Warteliste bei', whyTitle: 'Warum?', card1Title: 'Kollektives Wissen', card1Text: 'Von Köchen und Metzgern weltweit.', card2Title: 'Vollständig', card2Text: 'Jeder Schnitt, jede Methode, jedes Rezept.', contributeTitle: 'Hilf uns', contributeSub: 'Hast du Expertise? Wir brauchen dich!', contributeBtn: 'Beitragen', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Datenschutz', termsLink: 'AGB', selectValidation: 'Bitte wählen Sie eine Option aus der Liste.' },
-            it: { name: 'Italiano', flag: 'it', badge: '🚀 In arrivo', title: 'La prima enciclopedia collaborativa', subtitle: 'Aiutaci a costruire la guida definitiva. Fai parte di qualcosa di delizioso.', joinBtn: 'Iscriviti', note: 'Accesso anticipato. Mai spam.', successTxt: 'Sei nella lista!', growingWaitlist: 'Unisciti alla nostra lista d\'attesa', whyTitle: 'Perché?', card1Title: 'Collaborativo', card1Text: 'Costruito da chef e macellai.', card2Title: 'Completo', card2Text: 'Ogni taglio, metodo, ricetta.', contributeTitle: 'Aiutaci', contributeSub: 'Hai esperienza? Abbiamo bisogno di te!', contributeBtn: 'Contribuisci', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacy', termsLink: 'Termini', selectValidation: 'Seleziona un\'opzione dalla lista.' },
-            pt: { name: 'Português (Portugal)', flag: 'pt', badge: '🚀 Em breve', title: 'A primeira enciclopédia colaborativa', subtitle: 'Ajude-nos a construir o guia definitivo. Faça parte de algo delicioso.', joinBtn: 'Participar', note: 'Acesso antecipado. Sem spam.', successTxt: 'Você está na lista!', growingWaitlist: 'Junte-se à nossa lista de espera', whyTitle: 'Por quê?', card1Title: 'Colaborativo', card1Text: 'Construído por chefs e açougueiros.', card2Title: 'Completo', card2Text: 'Cada corte, método, receita.', contributeTitle: 'Ajude-nos', contributeSub: 'Tem experiência? Precisamos de você!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidade', termsLink: 'Termos', selectValidation: 'Por favor, selecione uma opção da lista.' },
-            'pt-br': { name: 'Português (Brasil)', flag: 'br', badge: '🚀 Em breve', title: 'A primeira enciclopédia colaborativa', subtitle: 'Ajude-nos a construir o guia definitivo. Faça parte de algo delicioso.', joinBtn: 'Participar', note: 'Acesso antecipado. Sem spam.', successTxt: 'Você está na lista!', growingWaitlist: 'Junte-se à nossa lista de espera', whyTitle: 'Por quê?', card1Title: 'Colaborativo', card1Text: 'Construído por chefs e açougueiros.', card2Title: 'Completo', card2Text: 'Cada corte, método, receita.', contributeTitle: 'Ajude-nos', contributeSub: 'Tem experiência? Precisamos de você!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidade', termsLink: 'Termos', selectValidation: 'Por favor, selecione uma opção da lista.' },
-            nl: { name: 'Nederlands', flag: 'nl', badge: '🚀 Binnenkort', title: 'De eerste collaboratieve encyclopedie', subtitle: 'Help mee bouwen aan de ultieme gids.', joinBtn: 'Deelnemen', note: 'Vroege toegang. Geen spam.', successTxt: 'Je staat op de lijst!', growingWaitlist: 'Schrijf je in op onze wachtlijst', whyTitle: 'Waarom?', card1Title: 'Collaboratief', card1Text: 'Gebouwd door chefs en slagers.', card2Title: 'Compleet', card2Text: 'Elke snede, methode, recept.', contributeTitle: 'Help ons', contributeSub: 'Expertise? We hebben je nodig!', contributeBtn: 'Bijdragen', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacy', termsLink: 'Voorwaarden', selectValidation: 'Selecteer een optie uit de lijst.' },
-            pl: { name: 'Polski', flag: 'pl', badge: '🚀 Wkrótce', title: 'Pierwsza współtworzona encyklopedia', subtitle: 'Pomóż nam stworzyć najlepszy przewodnik. Bądź częścią czegoś pysznego.', joinBtn: 'Dołącz', note: 'Wczesny dostęp. Bez spamu.', successTxt: 'Jesteś na liście!', growingWaitlist: 'Dołącz do naszej listy oczekujących', whyTitle: 'Dlaczego?', card1Title: 'Współtworzenie', card1Text: 'Tworzone przez szefów i rzeźników.', card2Title: 'Kompleksowe', card2Text: 'Każdy kawałek, metoda, przepis.', contributeTitle: 'Pomóż nam', contributeSub: 'Masz wiedzę? Potrzebujemy cię!', contributeBtn: 'Współtwórz', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Prywatność', termsLink: 'Regulamin', selectValidation: 'Proszę wybrać opcję z listy.' },
-            ru: { name: 'Русский', flag: 'ru', badge: '🚀 Скоро', title: 'Первая совместная энциклопедия', subtitle: 'Помоги создать лучший гид. Будь частью чего-то вкусного.', joinBtn: 'Присоединиться', note: 'Ранний доступ. Без спама.', successTxt: 'Вы в списке!', growingWaitlist: 'Присоединяйтесь к списку ожидания', whyTitle: 'Почему?', card1Title: 'Совместное', card1Text: 'Создано шеф-поварами и мясниками.', card2Title: 'Полное', card2Text: 'Каждый отруб, метод, рецепт.', contributeTitle: 'Помогите нам', contributeSub: 'Есть опыт? Мы нуждаемся в вас!', contributeBtn: 'Внести вклад', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Конфиденциальность', termsLink: 'Условия', selectValidation: 'Пожалуйста, выберите вариант из списка.' },
-            ja: { name: '日本語', flag: 'jp', badge: '🚀 近日公開', title: '世界初の共同作成肉百科事典', subtitle: '究極のガイドを一緒に作りましょう。', joinBtn: '参加する', note: '早期アクセス。スパムなし。', successTxt: 'リストに登録されました！', growingWaitlist: 'ウェイトリストに参加', whyTitle: 'なぜ？', card1Title: '共同作成', card1Text: 'シェフと肉屋が作成。', card2Title: '包括的', card2Text: 'すべてのカット、方法、レシピ。', contributeTitle: 'ご協力を', contributeSub: '専門知識がありますか？お待ちしています！', contributeBtn: '貢献する', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'プライバシー', termsLink: '利用規約', selectValidation: 'リストからオプションを選択してください。' },
-            zh: { name: '中文', flag: 'cn', badge: '🚀 即将推出', title: '世界首个众包肉类百科全书', subtitle: '帮助我们打造终极指南。', joinBtn: '加入候补', note: '抢先体验。无垃圾邮件。', successTxt: '您已加入！', growingWaitlist: '加入我们的候补名单', whyTitle: '为什么？', card1Title: '众包知识', card1Text: '由全球厨师和屠夫共建。', card2Title: '全面', card2Text: '每一种切割、方法、食谱。', contributeTitle: '帮助我们', contributeSub: '有专业知识？我们需要你！', contributeBtn: '贡献', footerTxt: '© 2026 Wiki Meaty.', privacyLink: '隐私政策', termsLink: '条款', selectValidation: '请从列表中选择一个选项。' },
-            ko: { name: '한국어', flag: 'kr', badge: '🚀 곧 출시', title: '세계 최초 크라우드소싱 고기 백과사전', subtitle: '궁극의 가이드를 함께 만들어보세요.', joinBtn: '대기자 명단', note: '조기 액세스. 스팸 없음.', successTxt: '등록되었습니다!', growingWaitlist: '대기자 명단에 참여하세요', whyTitle: '왜?', card1Title: '크라우드소싱', card1Text: '셰프와 정육점 주인이 제작.', card2Title: '포괄적', card2Text: '모든 절단, 방법, 레시피.', contributeTitle: '도움 주세요', contributeSub: '전문 지식이 있나요? 우리는 당신이 필요합니다!', contributeBtn: '기여하기', footerTxt: '© 2026 Wiki Meaty.', privacyLink: '개인정보', termsLink: '이용약관', selectValidation: '목록에서 옵션을 선택하세요.' },
-            ar: { name: 'العربية', flag: 'sa', badge: '🚀 قريباً', title: 'أول موسوعة تعاونية للحوم', subtitle: 'ساعدنا في بناء الدليل النهائي.', joinBtn: 'انضم', note: 'وصول مبكر. لا بريد عشوائي.', successTxt: 'أنت في القائمة!', growingWaitlist: 'انضم إلى قائمة الانتظار', whyTitle: 'لماذا؟', card1Title: 'تعاوني', card1Text: 'بناه الطهاة والجزارون.', card2Title: 'شامل', card2Text: 'كل قطعة، طريقة، وصفة.', contributeTitle: 'ساعدنا', contributeSub: 'لديك خبرة؟ نحن بحاجتك!', contributeBtn: 'ساهم', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'الخصوصية', termsLink: 'الشروط', selectValidation: 'يرجى اختيار خيار من القائمة.' }
+            en: { name: 'English (UK)', flag: 'gb', badge: '🚀 Launching Soon', title: 'The World\'s First Crowdsourced Meat Encyclopedia', subtitle: 'Help us build the ultimate guide to meat cuts, cooking methods, and recipes. Be part of something delicious.', joinBtn: 'Join Waitlist', note: 'Get early access and exclusive updates. No spam, ever.', successTxt: 'You\'re on the list! Check your email.', growingWaitlist: 'Join our growing waitlist', whyTitle: 'Why Wiki Meaty?', card1Title: 'Crowdsourced Knowledge', card1Text: 'Built by chefs, butchers, and meat lovers worldwide. Real expertise from real people.', card2Title: 'Comprehensive Database', card2Text: 'Every cut, every cooking method, every recipe - all in one searchable platform.', contributeTitle: 'Help Us Build It', contributeSub: 'Have expertise in meat cuts, butchery, or cooking? We need you! Contribute and get early contributor benefits.', contributeBtn: 'Become a Contributor', footerTxt: '© 2026 Wiki Meaty. All rights reserved.', privacyLink: 'Privacy', termsLink: 'Terms', selectValidation: 'Please select an option from the list.', requiredField: 'Please fill out this field.', invalidEmail: 'Please enter a valid email address.', successTitle: 'Thank you!', successMessage: 'We\'ll be in touch soon.', closeBtn: 'Close' },
+            us: { name: 'English (US)', flag: 'us', badge: '🚀 Launching Soon', title: 'The World\'s First Crowdsourced Meat Encyclopedia', subtitle: 'Help us build the ultimate guide to meat cuts, cooking methods, and recipes. Be part of something delicious.', joinBtn: 'Join Waitlist', note: 'Get early access and exclusive updates. No spam, ever.', successTxt: 'You\'re on the list! Check your email.', growingWaitlist: 'Join our growing waitlist', whyTitle: 'Why Wiki Meaty?', card1Title: 'Crowdsourced Knowledge', card1Text: 'Built by chefs, butchers, and meat lovers worldwide. Real expertise from real people.', card2Title: 'Comprehensive Database', card2Text: 'Every cut, every cooking method, every recipe - all in one searchable platform.', contributeTitle: 'Help Us Build It', contributeSub: 'Have expertise in meat cuts, butchery, or cooking? We need you! Contribute and get early contributor benefits.', contributeBtn: 'Become a Contributor', footerTxt: '© 2026 Wiki Meaty. All rights reserved.', privacyLink: 'Privacy', termsLink: 'Terms', selectValidation: 'Please select an option from the list.', requiredField: 'Please fill out this field.', invalidEmail: 'Please enter a valid email address.', successTitle: 'Thank you!', successMessage: 'We\'ll be in touch soon.', closeBtn: 'Close' },
+            es: { name: 'Español', flag: 'es', badge: '🚀 Próximamente', title: 'La Primera Enciclopedia Colaborativa de Carne', subtitle: 'Ayúdanos a construir la guía definitiva. Sé parte de algo delicioso.', joinBtn: 'Unirse', note: 'Acceso anticipado y actualizaciones. Sin spam.', successTxt: '¡Estás en la lista!', growingWaitlist: 'Únete a nuestra lista de espera', whyTitle: '¿Por Qué Wiki Meaty?', card1Title: 'Conocimiento Colaborativo', card1Text: 'Construido por chefs y carniceros. Experiencia real.', card2Title: 'Base Completa', card2Text: 'Cada corte, método y receta en una plataforma.', contributeTitle: 'Ayúdanos', contributeSub: '¿Tienes experiencia? ¡Te necesitamos!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidad', termsLink: 'Términos', selectValidation: 'Por favor, selecciona una opción de la lista.', requiredField: 'Por favor, rellena este campo.', invalidEmail: 'Por favor, introduce un correo electrónico válido.', successTitle: '¡Gracias!', successMessage: 'Nos pondremos en contacto pronto.', closeBtn: 'Cerrar' },
+            fr: { name: 'Français', flag: 'fr', badge: '🚀 Bientôt', title: 'La Première Encyclopédie Collaborative', subtitle: 'Aidez-nous à construire le guide ultime. Faites partie de quelque chose de délicieux.', joinBtn: 'Rejoindre', note: 'Accès anticipé. Jamais de spam.', successTxt: 'Vous êtes sur la liste!', growingWaitlist: 'Rejoignez notre liste d\'attente', whyTitle: 'Pourquoi?', card1Title: 'Collaboratif', card1Text: 'Construit par des chefs et bouchers.', card2Title: 'Complet', card2Text: 'Chaque découpe, méthode, recette.', contributeTitle: 'Aidez-Nous', contributeSub: 'Expertise? Nous avons besoin de vous!', contributeBtn: 'Contribuer', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Confidentialité', termsLink: 'Conditions', selectValidation: 'Veuillez sélectionner une option dans la liste.', requiredField: 'Veuillez remplir ce champ.', invalidEmail: 'Veuillez entrer une adresse e-mail valide.', successTitle: 'Merci!', successMessage: 'Nous vous contacterons bientôt.', closeBtn: 'Fermer' },
+            de: { name: 'Deutsch', flag: 'de', badge: '🚀 Bald verfügbar', title: 'Die erste kollaborative Fleisch-Enzyklopädie', subtitle: 'Hilf mit, den ultimativen Leitfaden zu erstellen.', joinBtn: 'Beitreten', note: 'Früher Zugang. Kein Spam.', successTxt: 'Du bist dabei!', growingWaitlist: 'Tritt unserer Warteliste bei', whyTitle: 'Warum?', card1Title: 'Kollektives Wissen', card1Text: 'Von Köchen und Metzgern weltweit.', card2Title: 'Vollständig', card2Text: 'Jeder Schnitt, jede Methode, jedes Rezept.', contributeTitle: 'Hilf uns', contributeSub: 'Hast du Expertise? Wir brauchen dich!', contributeBtn: 'Beitragen', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Datenschutz', termsLink: 'AGB', selectValidation: 'Bitte wählen Sie eine Option aus der Liste.', requiredField: 'Bitte füllen Sie dieses Feld aus.', invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.', successTitle: 'Danke!', successMessage: 'Wir melden uns bald.', closeBtn: 'Schließen' },
+            it: { name: 'Italiano', flag: 'it', badge: '🚀 In arrivo', title: 'La prima enciclopedia collaborativa', subtitle: 'Aiutaci a costruire la guida definitiva. Fai parte di qualcosa di delizioso.', joinBtn: 'Iscriviti', note: 'Accesso anticipato. Mai spam.', successTxt: 'Sei nella lista!', growingWaitlist: 'Unisciti alla nostra lista d\'attesa', whyTitle: 'Perché?', card1Title: 'Collaborativo', card1Text: 'Costruito da chef e macellai.', card2Title: 'Completo', card2Text: 'Ogni taglio, metodo, ricetta.', contributeTitle: 'Aiutaci', contributeSub: 'Hai esperienza? Abbiamo bisogno di te!', contributeBtn: 'Contribuisci', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacy', termsLink: 'Termini', selectValidation: 'Seleziona un\'opzione dalla lista.', requiredField: 'Compila questo campo.', invalidEmail: 'Inserisci un indirizzo e-mail valido.', successTitle: 'Grazie!', successMessage: 'Ti contatteremo presto.', closeBtn: 'Chiudi' },
+            pt: { name: 'Português (Portugal)', flag: 'pt', badge: '🚀 Em breve', title: 'A primeira enciclopédia colaborativa', subtitle: 'Ajude-nos a construir o guia definitivo. Faça parte de algo delicioso.', joinBtn: 'Participar', note: 'Acesso antecipado. Sem spam.', successTxt: 'Você está na lista!', growingWaitlist: 'Junte-se à nossa lista de espera', whyTitle: 'Por quê?', card1Title: 'Colaborativo', card1Text: 'Construído por chefs e açougueiros.', card2Title: 'Completo', card2Text: 'Cada corte, método, receita.', contributeTitle: 'Ajude-nos', contributeSub: 'Tem experiência? Precisamos de você!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidade', termsLink: 'Termos', selectValidation: 'Por favor, selecione uma opção da lista.', requiredField: 'Por favor, preencha este campo.', invalidEmail: 'Por favor, insira um e-mail válido.', successTitle: 'Obrigado!', successMessage: 'Entraremos em contacto em breve.', closeBtn: 'Fechar' },
+            'pt-br': { name: 'Português (Brasil)', flag: 'br', badge: '🚀 Em breve', title: 'A primeira enciclopédia colaborativa', subtitle: 'Ajude-nos a construir o guia definitivo. Faça parte de algo delicioso.', joinBtn: 'Participar', note: 'Acesso antecipado. Sem spam.', successTxt: 'Você está na lista!', growingWaitlist: 'Junte-se à nossa lista de espera', whyTitle: 'Por quê?', card1Title: 'Colaborativo', card1Text: 'Construído por chefs e açougueiros.', card2Title: 'Completo', card2Text: 'Cada corte, método, receita.', contributeTitle: 'Ajude-nos', contributeSub: 'Tem experiência? Precisamos de você!', contributeBtn: 'Contribuir', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacidade', termsLink: 'Termos', selectValidation: 'Por favor, selecione uma opção da lista.', requiredField: 'Por favor, preencha este campo.', invalidEmail: 'Por favor, insira um e-mail válido.', successTitle: 'Obrigado!', successMessage: 'Entraremos em contato em breve.', closeBtn: 'Fechar' },
+            nl: { name: 'Nederlands', flag: 'nl', badge: '🚀 Binnenkort', title: 'De eerste collaboratieve encyclopedie', subtitle: 'Help mee bouwen aan de ultieme gids.', joinBtn: 'Deelnemen', note: 'Vroege toegang. Geen spam.', successTxt: 'Je staat op de lijst!', growingWaitlist: 'Schrijf je in op onze wachtlijst', whyTitle: 'Waarom?', card1Title: 'Collaboratief', card1Text: 'Gebouwd door chefs en slagers.', card2Title: 'Compleet', card2Text: 'Elke snede, methode, recept.', contributeTitle: 'Help ons', contributeSub: 'Expertise? We hebben je nodig!', contributeBtn: 'Bijdragen', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Privacy', termsLink: 'Voorwaarden', selectValidation: 'Selecteer een optie uit de lijst.', requiredField: 'Vul dit veld in.', invalidEmail: 'Voer een geldig e-mailadres in.', successTitle: 'Bedankt!', successMessage: 'We nemen snel contact met je op.', closeBtn: 'Sluiten' },
+            pl: { name: 'Polski', flag: 'pl', badge: '🚀 Wkrótce', title: 'Pierwsza współtworzona encyklopedia', subtitle: 'Pomóż nam stworzyć najlepszy przewodnik. Bądź częścią czegoś pysznego.', joinBtn: 'Dołącz', note: 'Wczesny dostęp. Bez spamu.', successTxt: 'Jesteś na liście!', growingWaitlist: 'Dołącz do naszej listy oczekujących', whyTitle: 'Dlaczego?', card1Title: 'Współtworzenie', card1Text: 'Tworzone przez szefów i rzeźników.', card2Title: 'Kompleksowe', card2Text: 'Każdy kawałek, metoda, przepis.', contributeTitle: 'Pomóż nam', contributeSub: 'Masz wiedzę? Potrzebujemy cię!', contributeBtn: 'Współtwórz', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Prywatność', termsLink: 'Regulamin', selectValidation: 'Proszę wybrać opcję z listy.', requiredField: 'Proszę wypełnić to pole.', invalidEmail: 'Proszę podać prawidłowy adres e-mail.', successTitle: 'Dziękujemy!', successMessage: 'Wkrótce się skontaktujemy.', closeBtn: 'Zamknij' },
+            ru: { name: 'Русский', flag: 'ru', badge: '🚀 Скоро', title: 'Первая совместная энциклопедия', subtitle: 'Помоги создать лучший гид. Будь частью чего-то вкусного.', joinBtn: 'Присоединиться', note: 'Ранний доступ. Без спама.', successTxt: 'Вы в списке!', growingWaitlist: 'Присоединяйтесь к списку ожидания', whyTitle: 'Почему?', card1Title: 'Совместное', card1Text: 'Создано шеф-поварами и мясниками.', card2Title: 'Полное', card2Text: 'Каждый отруб, метод, рецепт.', contributeTitle: 'Помогите нам', contributeSub: 'Есть опыт? Мы нуждаемся в вас!', contributeBtn: 'Внести вклад', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'Конфиденциальность', termsLink: 'Условия', selectValidation: 'Пожалуйста, выберите вариант из списка.', requiredField: 'Пожалуйста, заполните это поле.', invalidEmail: 'Пожалуйста, введите действительный адрес электронной почты.', successTitle: 'Спасибо!', successMessage: 'Мы скоро свяжемся с вами.', closeBtn: 'Закрыть' },
+            ja: { name: '日本語', flag: 'jp', badge: '🚀 近日公開', title: '世界初の共同作成肉百科事典', subtitle: '究極のガイドを一緒に作りましょう。', joinBtn: '参加する', note: '早期アクセス。スパムなし。', successTxt: 'リストに登録されました！', growingWaitlist: 'ウェイトリストに参加', whyTitle: 'なぜ？', card1Title: '共同作成', card1Text: 'シェフと肉屋が作成。', card2Title: '包括的', card2Text: 'すべてのカット、方法、レシピ。', contributeTitle: 'ご協力を', contributeSub: '専門知識がありますか？お待ちしています！', contributeBtn: '貢献する', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'プライバシー', termsLink: '利用規約', selectValidation: 'リストからオプションを選択してください。', requiredField: 'このフィールドを入力してください。', invalidEmail: '有効なメールアドレスを入力してください。', successTitle: 'ありがとうございます！', successMessage: 'まもなくご連絡いたします。', closeBtn: '閉じる' },
+            zh: { name: '中文', flag: 'cn', badge: '🚀 即将推出', title: '世界首个众包肉类百科全书', subtitle: '帮助我们打造终极指南。', joinBtn: '加入候补', note: '抢先体验。无垃圾邮件。', successTxt: '您已加入！', growingWaitlist: '加入我们的候补名单', whyTitle: '为什么？', card1Title: '众包知识', card1Text: '由全球厨师和屠夫共建。', card2Title: '全面', card2Text: '每一种切割、方法、食谱。', contributeTitle: '帮助我们', contributeSub: '有专业知识？我们需要你！', contributeBtn: '贡献', footerTxt: '© 2026 Wiki Meaty.', privacyLink: '隐私政策', termsLink: '条款', selectValidation: '请从列表中选择一个选项。', requiredField: '请填写此字段。', invalidEmail: '请输入有效的电子邮件地址。', successTitle: '谢谢！', successMessage: '我们会尽快与您联系。', closeBtn: '关闭' },
+            ko: { name: '한국어', flag: 'kr', badge: '🚀 곧 출시', title: '세계 최초 크라우드소싱 고기 백과사전', subtitle: '궁극의 가이드를 함께 만들어보세요.', joinBtn: '대기자 명단', note: '조기 액세스. 스팸 없음.', successTxt: '등록되었습니다!', growingWaitlist: '대기자 명단에 참여하세요', whyTitle: '왜?', card1Title: '크라우드소싱', card1Text: '셰프와 정육점 주인이 제작.', card2Title: '포괄적', card2Text: '모든 절단, 방법, 레시피.', contributeTitle: '도움 주세요', contributeSub: '전문 지식이 있나요? 우리는 당신이 필요합니다!', contributeBtn: '기여하기', footerTxt: '© 2026 Wiki Meaty.', privacyLink: '개인정보', termsLink: '이용약관', selectValidation: '목록에서 옵션을 선택하세요.', requiredField: '이 필드를 작성해 주세요.', invalidEmail: '유효한 이메일 주소를 입력하세요.', successTitle: '감사합니다!', successMessage: '곧 연락드리겠습니다.', closeBtn: '닫기' },
+            ar: { name: 'العربية', flag: 'sa', badge: '🚀 قريباً', title: 'أول موسوعة تعاونية للحوم', subtitle: 'ساعدنا في بناء الدليل النهائي.', joinBtn: 'انضم', note: 'وصول مبكر. لا بريد عشوائي.', successTxt: 'أنت في القائمة!', growingWaitlist: 'انضم إلى قائمة الانتظار', whyTitle: 'لماذا؟', card1Title: 'تعاوني', card1Text: 'بناه الطهاة والجزارون.', card2Title: 'شامل', card2Text: 'كل قطعة، طريقة، وصفة.', contributeTitle: 'ساعدنا', contributeSub: 'لديك خبرة؟ نحن بحاجتك!', contributeBtn: 'ساهم', footerTxt: '© 2026 Wiki Meaty.', privacyLink: 'الخصوصية', termsLink: 'الشروط', selectValidation: 'يرجى اختيار خيار من القائمة.', requiredField: 'يرجى ملء هذا الحقل.', invalidEmail: 'يرجى إدخال عنوان بريد إلكتروني صالح.', successTitle: 'شكراً!', successMessage: 'سنتواصل معك قريباً.', closeBtn: 'إغلاق' }
         };
 
         let lang = 'en';
@@ -595,13 +642,18 @@
             document.getElementById('footerTxt').textContent = d.footerTxt;
             document.getElementById('privacyLink').textContent = d.privacyLink;
             document.getElementById('termsLink').textContent = d.termsLink;
+            document.getElementById('successTitle').textContent = d.successTitle;
+            document.getElementById('successMessage').textContent = d.successMessage;
+            document.getElementById('successCloseBtn').textContent = d.closeBtn;
             localStorage.setItem('wikimeaty_lang', l);
 
-            // Update custom validation message for the select element
-            const contributeSelect = document.querySelector('#contributeForm select[name="type"]');
-            if (contributeSelect) {
-                contributeSelect.setCustomValidity(contributeSelect.value ? '' : d.selectValidation);
-            }
+            // Trigger re-validation to update messages with new language
+            document.querySelectorAll('#contributeForm input, #contributeForm select, #contributeForm textarea, #form input').forEach(field => {
+                field.setCustomValidity('');
+                if (!field.checkValidity()) {
+                    field.dispatchEvent(new Event('invalid'));
+                }
+            });
         }
 
         function populateDropdown() {
@@ -643,7 +695,32 @@
             contributeModal.classList.remove('active');
             contributeModal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
+            hideContributeSuccess();
         }
+
+        function showContributeSuccess() {
+            const successDiv = document.getElementById('contributeSuccess');
+            const formTitle = document.getElementById('contributeTitleModal');
+            const formDesc = formTitle.nextElementSibling;
+
+            contributeForm.style.display = 'none';
+            formTitle.style.display = 'none';
+            formDesc.style.display = 'none';
+            successDiv.classList.add('active');
+        }
+
+        function hideContributeSuccess() {
+            const successDiv = document.getElementById('contributeSuccess');
+            const formTitle = document.getElementById('contributeTitleModal');
+            const formDesc = formTitle.nextElementSibling;
+
+            successDiv.classList.remove('active');
+            contributeForm.style.display = 'grid';
+            formTitle.style.display = '';
+            formDesc.style.display = '';
+        }
+
+        document.getElementById('successCloseBtn').addEventListener('click', closeContribute);
 
         contributeOpen.addEventListener('click', e => {
             e.preventDefault();
@@ -680,8 +757,7 @@
 
                 if (response.ok) {
                     contributeForm.reset();
-                    closeContribute();
-                    alert('Thanks! We\'ll be in touch soon.');
+                    showContributeSuccess();
                 } else {
                     alert('Something went wrong. Please try again.');
                 }
@@ -738,24 +814,49 @@
             const saved = localStorage.getItem('wikimeaty_lang');
             if (saved && t[saved]) updateLang(saved);
 
-            // Set up custom validation for the contribute form select
-            const contributeSelect = document.querySelector('#contributeForm select[name="type"]');
-            if (contributeSelect) {
-                // Set initial validation message
-                contributeSelect.setCustomValidity(t[lang].selectValidation);
+            // Helper function to set up validation for a field
+            function setupValidation(field, getValidationMessage) {
+                if (!field) return;
 
-                // Update validation when selection changes
-                contributeSelect.addEventListener('change', function() {
-                    this.setCustomValidity(this.value ? '' : t[lang].selectValidation);
-                });
-
-                // Update validation message on invalid event (in case language changed)
-                contributeSelect.addEventListener('invalid', function() {
-                    if (!this.value) {
-                        this.setCustomValidity(t[lang].selectValidation);
+                const updateValidity = () => {
+                    field.setCustomValidity('');
+                    if (!field.checkValidity()) {
+                        field.setCustomValidity(getValidationMessage());
                     }
+                };
+
+                field.addEventListener('input', updateValidity);
+                field.addEventListener('change', updateValidity);
+                field.addEventListener('invalid', function(e) {
+                    this.setCustomValidity(getValidationMessage());
                 });
+
+                // Set initial state
+                updateValidity();
             }
+
+            // Contribute form fields
+            const contributeSelect = document.querySelector('#contributeForm select[name="type"]');
+            const contributeName = document.querySelector('#contributeForm input[name="name"]');
+            const contributeEmail = document.querySelector('#contributeForm input[name="email"]');
+            const contributeIdea = document.querySelector('#contributeForm textarea[name="idea"]');
+
+            setupValidation(contributeSelect, () => t[lang].selectValidation);
+            setupValidation(contributeName, () => t[lang].requiredField);
+            setupValidation(contributeEmail, () => {
+                const email = contributeEmail.value;
+                if (!email) return t[lang].requiredField;
+                return t[lang].invalidEmail;
+            });
+            setupValidation(contributeIdea, () => t[lang].requiredField);
+
+            // Waitlist email field
+            const waitlistEmail = document.querySelector('#form input[name="email"]');
+            setupValidation(waitlistEmail, () => {
+                const email = waitlistEmail.value;
+                if (!email) return t[lang].requiredField;
+                return t[lang].invalidEmail;
+            });
         });
     </script>
 </body>
