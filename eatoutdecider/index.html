@@ -412,6 +412,24 @@
             color: var(--text);
         }
 
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px 20px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer a:hover {
+            color: var(--text);
+        }
+
         /* Modal */
         .modal-overlay {
             display: none;
@@ -626,6 +644,11 @@
             <button class="btn-primary" onclick="startOver()">Try Again</button>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        More projects at <a href="https://farifari.com" target="_blank">farifari.com</a>
+    </footer>
 
     <!-- Feedback Button -->
     <button class="feedback-btn" onclick="openFeedback()">💬 Feedback</button>
