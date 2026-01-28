@@ -380,6 +380,7 @@
             margin-bottom: 20px;
             font-size: 0.9rem;
             line-height: 1.5;
+            white-space: pre-line;
         }
 
         /* Location permission */
@@ -532,8 +533,9 @@
         <div id="locationScreen" class="screen active">
             <div class="location-prompt">
                 <div class="location-icon">📍</div>
-                <p>We need your location to find restaurants near you.</p>
-                <button class="btn-primary" onclick="requestLocation()">Allow Location</button>
+                <h2 style="margin-bottom: 12px; font-family: 'Instrument Serif', serif; font-size: 1.5rem;">Allow Location Access</h2>
+                <p>Tap the button below, then tap <strong>"Allow"</strong> when your browser asks.<br><br>Without your location, we can't find restaurants near you.</p>
+                <button class="btn-primary" onclick="requestLocation()">Enable Location</button>
             </div>
         </div>
 
@@ -724,7 +726,7 @@
                 const results = await searchNearbyRestaurants();
                 
                 if (results.length === 0) {
-                    showError('No restaurants found matching your criteria. Try expanding your distance or changing filters.');
+                    showError('No restaurants found with those exact filters. Try:\n• A longer distance\n• Different price range\n• "Anything" for cuisine');
                     return;
                 }
 
