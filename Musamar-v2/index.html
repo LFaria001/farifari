@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Musamar — Criações Premium de Tâmaras Medjool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1774,10 +1778,13 @@ footer {
     <p class="section-label">Fique Ligado</p>
     <h2>Seja o <em>Primeiro</em><br>a Saber</h2>
     <p>Junte-se à nossa lista para acesso antecipado a novas coleções, ofertas exclusivas e as histórias por trás do nosso ofício.</p>
-    <div class="nl-form">
-      <input type="email" placeholder="O seu endereço de email" aria-label="Endereço de email">
+    <form class="nl-form" id="newsletterForm" novalidate>
+      <!-- Honeypot field for spam protection (hidden from real users) -->
+      <input type="text" name="website" style="display:none !important" tabindex="-1" autocomplete="off">
+      <input type="email" name="email" placeholder="O seu endereço de email" aria-label="Endereço de email" required autocomplete="email" inputmode="email">
       <button type="submit">Subscrever</button>
-    </div>
+    </form>
+    <p id="formMessage" style="margin-top: 1rem; font-size: 0.8rem; display: none;"></p>
   </div>
 </section>
 
@@ -1816,9 +1823,9 @@ footer {
   <div class="footer-bottom">
     <p>&copy; 2026 Musamar. Todos os direitos reservados.</p>
     <div class="footer-social">
-      <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg></a>
-      <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg></a>
-      <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+      <a href="#" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg></a>
+      <a href="#" aria-label="TikTok" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12a4 4 0 104 4V4a5 5 0 005 5"/></svg></a>
+      <a href="#" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
     </div>
   </div>
 </footer>
@@ -1871,6 +1878,56 @@ const revealObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// Newsletter form validation
+const newsletterForm = document.getElementById('newsletterForm');
+const formMessage = document.getElementById('formMessage');
+
+newsletterForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  // Check honeypot (spam protection)
+  const honeypot = this.querySelector('input[name="website"]');
+  if (honeypot && honeypot.value) {
+    // Bot detected, silently reject
+    return;
+  }
+
+  const emailInput = this.querySelector('input[name="email"]');
+  const email = emailInput.value.trim();
+
+  // Email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email) {
+    showFormMessage('Por favor, introduza o seu email.', 'error');
+    return;
+  }
+
+  if (!emailRegex.test(email)) {
+    showFormMessage('Por favor, introduza um email válido.', 'error');
+    return;
+  }
+
+  // Sanitize email (basic XSS prevention)
+  const sanitizedEmail = email.replace(/[<>\"\']/g, '');
+
+  // Here you would send to your backend
+  // For now, show success message
+  showFormMessage('Obrigado! Será notificado quando lançarmos.', 'success');
+  emailInput.value = '';
+});
+
+function showFormMessage(message, type) {
+  formMessage.textContent = message;
+  formMessage.style.display = 'block';
+  formMessage.style.color = type === 'error' ? '#c0392b' : 'var(--caramel)';
+
+  // Hide message after 5 seconds
+  setTimeout(() => {
+    formMessage.style.display = 'none';
+  }, 5000);
+}
 </script>
 
 </body>
