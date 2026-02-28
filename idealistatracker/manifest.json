@@ -1,6 +1,6 @@
 {
   "name": "Idealista Tracker",
-  "short_name": "Idealista",
+  "short_name": "Idealista Tracker",
   "description": "Gestor de trabalhos multimédia para imobiliárias",
   "start_url": "/idealistatracker/",
   "display": "standalone",
