@@ -1,6 +1,6 @@
 {
   "name": "Eat Out Decider",
-  "short_name": "EatOut",
+  "short_name": "Eat Out Decider",
   "description": "Decide where to eat out",
   "start_url": "/eatoutdecider/",
   "display": "standalone",
