@@ -1,0 +1,18 @@
+{
+  "name": "Eat Out Decider",
+  "short_name": "EatOut",
+  "description": "Decide where to eat out",
+  "start_url": "/eatoutdecider/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/eatoutdecider/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
