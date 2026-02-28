@@ -1,6 +1,6 @@
 {
   "name": "Wiki Meaty",
-  "short_name": "WikiMeaty",
+  "short_name": "Wiki Meaty",
   "description": "The world's first crowdsourced encyclopedia of meat cuts",
   "start_url": "/wikimeaty/",
   "display": "standalone",
@@ -8,6 +8,12 @@
   "theme_color": "#8B0000",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "/wikimeaty/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/wikimeaty/icon.svg",
       "sizes": "any",
