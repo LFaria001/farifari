@@ -582,7 +582,7 @@ function DashboardPage({ trabalhos, clienteNome, isMobile, alertas, mesAtual }) 
   const seg = new Date(hj); seg.setDate(hj.getDate() - ((dow + 6) % 7)); seg.setHours(0,0,0,0);
   const dom = new Date(seg); dom.setDate(seg.getDate() + 6); dom.setHours(23,59,59,999);
   const semanaTrab = trabalhos.filter(t => { const d = new Date(t.data_trabalho); return d >= seg && d <= dom; });
-  const mesTrab = trabalhos.filter(t => mesAno(t.data_trabalho) === mesAtual);
+  const mesTrab = trabalhos.filter(t => (t.mes_referencia || mesAno(t.data_trabalho)) === mesAtual);
   const fatSemana = semanaTrab.reduce((s, t) => s + (t.valor || 0), 0);
   const fatMes = mesTrab.reduce((s, t) => s + (t.valor || 0), 0);
 
@@ -1118,7 +1118,7 @@ function RelatoriosPage({ clientes, trabalhos, consumos, saldoMes, mesAtual, cli
   }, [clientes, mes, saldoMes, trabalhos, consumos]);
 
   const trabalhosPeriodo = useMemo(() => {
-    return trabalhos.filter(t => mesAno(t.data_trabalho) === mes).sort((a, b) => new Date(b.data_trabalho) - new Date(a.data_trabalho));
+    return trabalhos.filter(t => (t.mes_referencia || mesAno(t.data_trabalho)) === mes).sort((a, b) => new Date(b.data_trabalho) - new Date(a.data_trabalho));
   }, [trabalhos, mes]);
 
   return (
