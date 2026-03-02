@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   LayoutDashboard, Users, Briefcase, BarChart3, Plus, Search,
   Upload, CheckCircle, AlertTriangle, ChevronRight, X, Edit2,
-  ArrowLeft, Trash2, Filter, Calendar,
+  ArrowLeft, Trash2, Filter, Calendar, Download, ChevronLeft,
   AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro
 } from "lucide-react";
 
@@ -578,17 +578,32 @@ function TrabalhoCard({ t, clienteNome, onAction }) {
 
 // ─── DASHBOARD ──────────────────────────────────────────────────────────────
 function DashboardPage({ trabalhos, clienteNome, isMobile, alertas, mesAtual }) {
+  const [mes, setMes] = useState(mesAtual);
+  const isCurrentMonth = mes === mesAtual;
+
+  const navMes = (dir) => {
+    const [y, m] = mes.split("-").map(Number);
+    const d = new Date(y, m - 1 + dir, 1);
+    setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+
   const hj = new Date(); const dow = hj.getDay();
   const seg = new Date(hj); seg.setDate(hj.getDate() - ((dow + 6) % 7)); seg.setHours(0,0,0,0);
   const dom = new Date(seg); dom.setDate(seg.getDate() + 6); dom.setHours(23,59,59,999);
   const semanaTrab = trabalhos.filter(t => { const d = new Date(t.data_trabalho); return d >= seg && d <= dom; });
-  const mesTrab = trabalhos.filter(t => (t.mes_referencia || mesAno(t.data_trabalho)) === mesAtual);
+  const mesTrab = trabalhos.filter(t => (t.mes_referencia || mesAno(t.data_trabalho)) === mes);
   const fatSemana = semanaTrab.reduce((s, t) => s + (t.valor || 0), 0);
   const fatMes = mesTrab.reduce((s, t) => s + (t.valor || 0), 0);
 
   return (
     <div>
       <PageHeader title="Dashboard" subtitle={new Date().toLocaleDateString("pt-PT", { weekday: "long", day: "numeric", month: "long" })} isMobile={isMobile} />
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 16 }}>
+        <button onClick={() => navMes(-1)} style={{ background: "none", border: "none", color: "#a1a1aa", cursor: "pointer", padding: 4 }}><ChevronLeft size={20} /></button>
+        <span style={{ fontSize: 15, fontWeight: 600, color: "#f4f4f5", minWidth: 100, textAlign: "center" }}>{mesLabel(mes)}</span>
+        <button onClick={() => navMes(1)} style={{ background: "none", border: "none", color: isCurrentMonth ? "#27272a" : "#a1a1aa", cursor: isCurrentMonth ? "default" : "pointer", padding: 4 }} disabled={isCurrentMonth}><ChevronRight size={20} /></button>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: isMobile ? 10 : 14, marginBottom: 16 }}>
         {[
@@ -1217,7 +1232,7 @@ function RelatoriosPage({ clientes, trabalhos, consumos, saldoMes, mesAtual, cli
 }
 
 // ─── DEFINIÇÕES PAGE ─────────────────────────────────────────────────────────
-function DefinicoesPage({ clientes, trabalhos, consumos, sincronizarSheets, syncLoading, isMobile }) {
+function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast }) {
   const sectionStyle = {
     background: "#13141b", borderRadius: 14, border: "1px solid #1e1f2a",
     padding: isMobile ? 16 : 20, marginBottom: 16,
@@ -1268,6 +1283,47 @@ function DefinicoesPage({ clientes, trabalhos, consumos, sincronizarSheets, sync
             <div style={{ fontSize: 11, color: "#52525b" }}>Consumos</div>
             <div style={{ fontSize: 18, fontWeight: 600, color: "#f4f4f5" }}>{totalConsumos}</div>
           </div>
+        </div>
+      </div>
+
+      {/* ── BACKUP ── */}
+      <div style={sectionStyle}>
+        <div style={headingStyle}><Download size={16} /> Backup</div>
+        <p style={{ fontSize: 13, color: "#71717a", marginBottom: 12, lineHeight: 1.5 }}>
+          Exporta ou restaura todos os dados da app.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          <button onClick={() => {
+            const data = JSON.stringify({ clientes, trabalhos, consumos }, null, 2);
+            const blob = new Blob([data], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = `idealista-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click(); URL.revokeObjectURL(url);
+          }} style={{ ...btnStyle, color: "#3b82f6", borderColor: "#1e40af" }}>
+            <Download size={14} /> Exportar JSON
+          </button>
+          <button onClick={() => {
+            const input = document.createElement("input");
+            input.type = "file"; input.accept = ".json";
+            input.onchange = (e) => {
+              const file = e.target.files[0]; if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  const d = JSON.parse(ev.target.result);
+                  if (!d.clientes || !d.trabalhos || !d.consumos) { showToast("Ficheiro inválido.", "error"); return; }
+                  if (!window.confirm(`Importar ${d.clientes.length} clientes, ${d.trabalhos.length} trabalhos e ${d.consumos.length} consumos? Isto substitui todos os dados atuais.`)) return;
+                  setClientes(d.clientes); setTrabalhos(d.trabalhos); setConsumos(d.consumos);
+                  showToast("Dados importados com sucesso!", "success");
+                } catch { showToast("Erro ao ler ficheiro.", "error"); }
+              };
+              reader.readAsText(file);
+            };
+            input.click();
+          }} style={{ ...btnStyle, color: "#8b5cf6", borderColor: "#5b21b6" }}>
+            <Upload size={14} /> Importar JSON
+          </button>
         </div>
       </div>
 
