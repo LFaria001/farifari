@@ -1007,7 +1007,7 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [idMode, setIdMode] = useState(existing?.id_sistema?.trim() ? "id" : existing?.morada?.trim() ? "morada" : "id");
   const [form, setForm] = useState(existing || {
-    cliente_id: "", data_trabalho: hoje(), local: "", morada: "",
+    cliente_id: "", data_trabalho: hoje(), mes_referencia: mesAno(hoje()), local: "", morada: "",
     id_sistema: "", tipo_multimedia: "VT", valor: valorPorTipo("VT"), estado_trabalho: "Realizado",
     link_upload: "", notas_upload: "", data_upload: null
   });
@@ -1024,7 +1024,7 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
     if (editId) { setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...form, valor: form.valor ? +form.valor : null } : t)); showToast("Atualizado.", "success"); }
     else {
       const newId = uid();
-      const periodo = mesAno(form.data_trabalho || new Date());
+      const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
       setTrabalhos(p => [...p, { ...form, id: newId, valor: form.valor ? +form.valor : null }]);
       if (form.cliente_id) registarConsumo(newId, form.cliente_id, form.tipo_multimedia, periodo);
       showToast("Criado.", "success");
@@ -1037,7 +1037,8 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
       <button onClick={() => navigate("trabalhos")} style={{ ...btnChip, marginBottom: 12 }}><ArrowLeft size={14} /> Voltar</button>
       <PageHeader title={editId ? "Editar Trabalho" : "Novo Trabalho"} isMobile={isMobile} />
       <div style={{ display: "grid", gap: 14 }}>
-        <div><label style={labelStyle}>Data <span style={{ color: "#ef4444" }}>*</span></label><input type="date" style={inputStyle} value={form.data_trabalho} onChange={e => F("data_trabalho", e.target.value)} /></div>
+        <div><label style={labelStyle}>Data <span style={{ color: "#ef4444" }}>*</span></label><input type="date" style={inputStyle} value={form.data_trabalho} onChange={e => { F("data_trabalho", e.target.value); if (!existing) F("mes_referencia", mesAno(e.target.value)); }} /></div>
+        <div><label style={labelStyle}>Mês de referência</label><input type="month" style={inputStyle} value={form.mes_referencia || mesAno(form.data_trabalho)} onChange={e => F("mes_referencia", e.target.value)} /></div>
         <div style={{ position: "relative" }}><label style={labelStyle}>Agência <span style={{ color: "#ef4444" }}>*</span></label>
           <input style={inputStyle} value={agenciaSearch} placeholder="Pesquisar agência..."
             onChange={e => {
