@@ -5,7 +5,6 @@ import {
   ArrowLeft, Trash2, Filter, Calendar,
   AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro
 } from "lucide-react";
-import * as XLSX from "xlsx";
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 const uid = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2, 11);
@@ -130,86 +129,120 @@ export default function App() {
     trabalhos: "1KJ3IZJRJWiXSHBy-JrHIPC_advKYhWDz",
   };
 
-  const fetchGoogleSheet = async (sheetId) => {
-    const res = await fetch(`/api/sheets/spreadsheets/d/${sheetId}/export?format=xlsx`);
-    if (!res.ok) throw new Error(`Erro ao aceder ao Google Sheets (${sheetId}). Verifica que está partilhado como "Qualquer pessoa com o link".`);
-    return await res.arrayBuffer();
+  const parseCSV = (text) => {
+    const rows = [];
+    let current = "", inQuotes = false, row = [], i = 0;
+    while (i <= text.length) {
+      const ch = text[i] ?? "\n";
+      if (inQuotes) {
+        if (ch === '"' && text[i + 1] === '"') { current += '"'; i += 2; continue; }
+        if (ch === '"') { inQuotes = false; i++; continue; }
+        current += ch; i++; continue;
+      }
+      if (ch === '"') { inQuotes = true; i++; continue; }
+      if (ch === ",") { row.push(current); current = ""; i++; continue; }
+      if (ch === "\n" || ch === "\r") {
+        row.push(current); current = "";
+        if (row.some(c => c.trim())) rows.push(row);
+        row = [];
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        i++; continue;
+      }
+      current += ch; i++;
+    }
+    return rows;
   };
 
-  const parseClientesFromWB = (wb, existingNames, seen) => {
+  const fetchGoogleSheet = async (sheetId) => {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Erro ao aceder ao Google Sheets (${sheetId}). Verifica que está partilhado como "Qualquer pessoa com o link".`);
+    const text = await res.text();
+    // gviz returns JS callback on error, CSV on success
+    if (text.includes("google.visualization.Query.setResponse")) {
+      throw new Error(`Google Sheets não acessível. Verifica que a sheet está partilhada como "Qualquer pessoa com o link".`);
+    }
+    const csvRows = parseCSV(text);
+    if (!csvRows.length) throw new Error("Sheet vazia — nenhum dado encontrado.");
+    // Convert CSV rows to array of objects (first row = headers)
+    const headers = csvRows[0];
+    const data = csvRows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] ?? ""; });
+      return obj;
+    });
+    return { headers, data };
+  };
+
+  const parseClientesFromSheet = ({ headers, data }, existingNames, seen) => {
     const novos = [];
-    for (const sheetName of wb.SheetNames) {
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: "" });
-      if (!rows.length) continue;
-      const headers = Object.keys(rows[0]);
+    const rows = data;
+    if (!rows.length) return novos;
 
-      // Try to find columns by name first, then fall back to position
-      let colAgencia = findCol(headers, ["Agência", "Agencia"]);
-      let colContacto = findCol(headers, ["Contacto"]);
-      let colEmail = findCol(headers, ["Email"]);
-      let colConteudos = findCol(headers, ["Conteúdos", "Conteudos", "Multimédia", "Multimedia"]);
-      let colNotas = findCol(headers, ["Notas"]);
+    // Try to find columns by name first, then fall back to position
+    let colAgencia = findCol(headers, ["Agência", "Agencia"]);
+    let colContacto = findCol(headers, ["Contacto"]);
+    let colEmail = findCol(headers, ["Email"]);
+    let colConteudos = findCol(headers, ["Conteúdos", "Conteudos", "Multimédia", "Multimedia"]);
+    let colNotas = findCol(headers, ["Notas"]);
 
-      // If no named "Agência" column, try to detect by content pattern
-      // Look for a column whose values look like agency names (strings, not numbers/emails)
-      if (!colAgencia) {
-        // Try __EMPTY columns or any column that has text agency names
-        for (const h of headers) {
-          const sample = String(rows[0][h] ?? "").trim();
-          if (sample && !sample.includes("@") && isNaN(sample) && sample.length > 3 && !sample.includes("VT") && !sample.includes("VI")) {
-            colAgencia = h;
-            break;
-          }
+    // If no named "Agência" column, try to detect by content pattern
+    if (!colAgencia) {
+      for (const h of headers) {
+        const sample = String(rows[0][h] ?? "").trim();
+        if (sample && !sample.includes("@") && isNaN(sample) && sample.length > 3 && !sample.includes("VT") && !sample.includes("VI")) {
+          colAgencia = h;
+          break;
         }
       }
-      if (!colAgencia) continue;
+    }
+    if (!colAgencia) return novos;
 
-      // Detect conteúdos column by content pattern (contains "VT" or "VI")
-      if (!colConteudos) {
-        for (const h of headers) {
-          const sample = String(rows[0][h] ?? "");
-          if (sample.match(/\d+\s*(VT|VI|3D)/i)) { colConteudos = h; break; }
-        }
+    // Detect conteúdos column by content pattern (contains "VT" or "VI")
+    if (!colConteudos) {
+      for (const h of headers) {
+        const sample = String(rows[0][h] ?? "");
+        if (sample.match(/\d+\s*(VT|VI|3D)/i)) { colConteudos = h; break; }
       }
-      // Detect email column by content pattern
-      if (!colEmail) {
-        for (const h of headers) {
-          const sample = String(rows[0][h] ?? "");
-          if (sample.includes("@")) { colEmail = h; break; }
-        }
+    }
+    // Detect email column by content pattern
+    if (!colEmail) {
+      for (const h of headers) {
+        const sample = String(rows[0][h] ?? "");
+        if (sample.includes("@")) { colEmail = h; break; }
       }
-      // Detect contacto column by content pattern (9-digit number)
-      if (!colContacto) {
-        for (const h of headers) {
-          const sample = String(rows[0][h] ?? "").trim();
-          if (sample.match(/^\d{9,}$/)) { colContacto = h; break; }
-        }
+    }
+    // Detect contacto column by content pattern (9-digit number)
+    if (!colContacto) {
+      for (const h of headers) {
+        const sample = String(rows[0][h] ?? "").trim();
+        if (sample.match(/^\d{9,}$/)) { colContacto = h; break; }
       }
+    }
 
-      for (const row of rows) {
-        const nome = String(row[colAgencia] ?? "").trim();
-        if (!nome) continue;
-        const nomeKey = nome.toLowerCase();
-        if (existingNames.has(nomeKey) || seen.has(nomeKey)) continue;
-        seen.add(nomeKey);
+    for (const row of rows) {
+      const nome = String(row[colAgencia] ?? "").trim();
+      if (!nome) continue;
+      const nomeKey = nome.toLowerCase();
+      if (existingNames.has(nomeKey) || seen.has(nomeKey)) continue;
+      seen.add(nomeKey);
 
-        const conteudos = colConteudos ? String(row[colConteudos] ?? "").trim() : "";
-        const plano = { creditos_vt: 0, creditos_video: 0, creditos_3d: 0 };
-        const vtMatch = conteudos.match(/(\d+)\s*VT/i);
-        const viMatch = conteudos.match(/(\d+)\s*V[IÍ]/i);
-        const tdMatch = conteudos.match(/(\d+)\s*3D/i);
-        if (vtMatch) plano.creditos_vt = parseInt(vtMatch[1]);
-        if (viMatch) plano.creditos_video = parseInt(viMatch[1]);
-        if (tdMatch) plano.creditos_3d = parseInt(tdMatch[1]);
+      const conteudos = colConteudos ? String(row[colConteudos] ?? "").trim() : "";
+      const plano = { creditos_vt: 0, creditos_video: 0, creditos_3d: 0 };
+      const vtMatch = conteudos.match(/(\d+)\s*VT/i);
+      const viMatch = conteudos.match(/(\d+)\s*V[IÍ]/i);
+      const tdMatch = conteudos.match(/(\d+)\s*3D/i);
+      if (vtMatch) plano.creditos_vt = parseInt(vtMatch[1]);
+      if (viMatch) plano.creditos_video = parseInt(viMatch[1]);
+      if (tdMatch) plano.creditos_3d = parseInt(tdMatch[1]);
 
-        novos.push({
-          id: uid(), nome_agencia: nome,
-          contacto: colContacto ? String(row[colContacto] ?? "") : "",
-          email: colEmail ? String(row[colEmail] ?? "").trim() : "",
-          notas: colNotas ? String(row[colNotas] ?? "").trim() : "",
-          plano_mensal: plano, estado_cliente: "ativo",
-        });
-      }
+      novos.push({
+        id: uid(), nome_agencia: nome,
+        contacto: colContacto ? String(row[colContacto] ?? "") : "",
+        email: colEmail ? String(row[colEmail] ?? "").trim() : "",
+        notas: colNotas ? String(row[colNotas] ?? "").trim() : "",
+        plano_mensal: plano, estado_cliente: "ativo",
+      });
     }
     return novos;
   };
@@ -218,12 +251,11 @@ export default function App() {
     setSyncLoading(true);
     try {
       // 1. Fetch client sheet
-      const bufCli = await fetchGoogleSheet(SHEETS.clientes);
-      const wbCli = XLSX.read(bufCli, { type: "array" });
+      const wbCli = await fetchGoogleSheet(SHEETS.clientes);
 
       const existingNames = new Set(clientes.map(c => c.nome_agencia.toLowerCase()));
       const seen = new Set();
-      const novosClientes = parseClientesFromWB(wbCli, existingNames, seen);
+      const novosClientes = parseClientesFromSheet(wbCli, existingNames, seen);
 
       // Add new clients
       if (novosClientes.length) setClientes(prev => [...prev, ...novosClientes]);

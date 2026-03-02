@@ -6,18 +6,10 @@ export default defineConfig({
   plugins: [react()],
   base: '/idealistatracker/',
   build: {
-    outDir: '../idealistatracker',
+    outDir: 'dist',
     emptyOutDir: true,
   },
   server: {
     host: true,
-    proxy: {
-      '/api/sheets': {
-        target: 'https://docs.google.com',
-        changeOrigin: true,
-        followRedirects: true,
-        rewrite: (path) => path.replace(/^\/api\/sheets/, ''),
-      },
-    },
   },
 })
