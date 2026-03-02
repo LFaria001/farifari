@@ -854,7 +854,7 @@ function ClienteForm({ clientes, setClientes, navigate, showToast, editId, isMob
 }
 
 // ─── TRABALHOS LISTA ────────────────────────────────────────────────────────
-function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, navigate, showToast, modal, setModal, isMobile }) {
+function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, navigate, showToast, modal, setModal, isMobile, setConsumos }) {
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroCliente, setFiltroCliente] = useState("");
@@ -878,6 +878,7 @@ function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, naviga
     else if (action === "apagar") {
       if (window.confirm("Tens a certeza que queres apagar este trabalho?")) {
         setTrabalhos(p => p.filter(tr => tr.id !== t.id));
+        setConsumos(p => p.filter(c => c.trabalho_id !== t.id));
         showToast("Trabalho apagado.", "success");
       }
     }
