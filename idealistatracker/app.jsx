@@ -1280,7 +1280,9 @@ function DefinicoesPage({ clientes, trabalhos, consumos, sincronizarSheets, sync
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button onClick={() => {
             if (window.confirm("Tens a certeza? Isto apaga TODOS os dados da app (clientes, trabalhos, consumos). Esta ação não pode ser desfeita.")) {
-              localStorage.clear();
+              localStorage.removeItem("mm_clientes");
+              localStorage.removeItem("mm_trabalhos");
+              localStorage.removeItem("mm_consumos");
               window.location.reload();
             }
           }} style={{
