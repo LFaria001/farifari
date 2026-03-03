@@ -1016,7 +1016,7 @@ function ModalUpload({ trabalho, onClose, setTrabalhos, showToast, clienteNome, 
 }
 
 // ─── TRABALHO FORM ──────────────────────────────────────────────────────────
-function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, editId, isMobile, registarConsumo }) {
+function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, editId, isMobile, registarConsumo, setConsumos }) {
   const existing = editId ? trabalhos.find(t => t.id === editId) : null;
   const existingCliente = existing ? clientes.find(c => c.id === existing.cliente_id) : null;
   const [agenciaSearch, setAgenciaSearch] = useState(existingCliente?.nome_agencia || "");
@@ -1037,7 +1037,14 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
     if (idMode === "morada" && !form.morada?.trim()) { showToast("Morada é obrigatória.", "error"); return; }
     if (!form.local?.trim()) { showToast("Local é obrigatório.", "error"); return; }
     if (!window.confirm("Tens a certeza que queres guardar?")) return;
-    if (editId) { setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...form, valor: form.valor ? +form.valor : null } : t)); showToast("Atualizado.", "success"); }
+    if (editId) {
+      setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...form, valor: form.valor ? +form.valor : null } : t));
+      // Re-register consumption with updated type/period/client
+      const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
+      setConsumos(p => p.filter(c => c.trabalho_id !== editId));
+      if (form.cliente_id) registarConsumo(editId, form.cliente_id, form.tipo_multimedia, periodo);
+      showToast("Atualizado.", "success");
+    }
     else {
       const newId = uid();
       const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
