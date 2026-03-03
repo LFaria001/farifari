@@ -5,11 +5,19 @@ import {
   ArrowLeft, Trash2, Filter, Calendar, Download, ChevronLeft,
   AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro, LogOut
 } from "lucide-react";
-import {
-  auth, googleProvider, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, signInWithPopup,
-  signOut, onAuthStateChanged,
-} from "./src/firebase.js";
+
+// ─── AUTH HELPERS ────────────────────────────────────────────────────────────
+const RECAPTCHA_SITE_KEY = "YOUR_RECAPTCHA_SITE_KEY"; // TODO: substituir pela tua site key do Google reCAPTCHA v2
+const hashPassword = async (pw) => {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+};
+const getUsers = () => { try { return JSON.parse(localStorage.getItem("mm_auth_users") || "[]"); } catch { return []; } };
+const saveUsers = (users) => localStorage.setItem("mm_auth_users", JSON.stringify(users));
+const getSession = () => localStorage.getItem("mm_auth_session");
+const setSession = (email) => localStorage.setItem("mm_auth_session", email);
+const clearSession = () => localStorage.removeItem("mm_auth_session");
+const userKey = (email) => email.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 const uid = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2, 11);
@@ -63,41 +71,47 @@ function useMedia(query) {
 }
 
 // ─── LOGIN PAGE ─────────────────────────────────────────────────────────────
-function LoginPage() {
+function LoginPage({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaDone, setCaptchaDone] = useState(false);
+  const captchaRef = useRef(null);
+
+  useEffect(() => {
+    // Load reCAPTCHA script
+    if (document.getElementById("recaptcha-script")) return;
+    const script = document.createElement("script");
+    script.id = "recaptcha-script";
+    script.src = "https://www.google.com/recaptcha/api.js";
+    script.async = true; script.defer = true;
+    document.head.appendChild(script);
+    window.onRecaptchaSuccess = () => setCaptchaDone(true);
+    window.onRecaptchaExpired = () => setCaptchaDone(false);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!captchaDone) { setError("Completa o reCAPTCHA."); return; }
     setError(""); setLoading(true);
     try {
+      const users = getUsers();
+      const hash = await hashPassword(password);
       if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+          setError("Este email já está registado."); setLoading(false); return;
+        }
+        if (password.length < 6) { setError("A password deve ter pelo menos 6 caracteres."); setLoading(false); return; }
+        saveUsers([...users, { email: email.toLowerCase(), passwordHash: hash }]);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === hash);
+        if (!found) { setError("Email ou password incorretos."); setLoading(false); return; }
       }
-    } catch (err) {
-      const msgs = {
-        "auth/invalid-credential": "Email ou password incorretos.",
-        "auth/email-already-in-use": "Este email já está registado.",
-        "auth/weak-password": "A password deve ter pelo menos 6 caracteres.",
-        "auth/invalid-email": "Email inválido.",
-      };
-      setError(msgs[err.code] || err.message);
-    }
-    setLoading(false);
-  };
-
-  const handleGoogle = async () => {
-    setError(""); setLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      if (err.code !== "auth/popup-closed-by-user") setError("Erro ao entrar com Google.");
-    }
+      setSession(email.toLowerCase());
+      onLogin(email.toLowerCase());
+    } catch { setError("Erro inesperado."); }
     setLoading(false);
   };
 
@@ -136,26 +150,19 @@ function LoginPage() {
             onChange={e => setEmail(e.target.value)} required />
           <input style={iStyle} type="password" placeholder="Password" value={password}
             onChange={e => setPassword(e.target.value)} required minLength={6} />
-          <button type="submit" disabled={loading} style={{
+          <div ref={captchaRef} className="g-recaptcha"
+            data-sitekey={RECAPTCHA_SITE_KEY}
+            data-callback="onRecaptchaSuccess"
+            data-expired-callback="onRecaptchaExpired"
+            data-theme="dark" />
+          <button type="submit" disabled={loading || !captchaDone} style={{
             width: "100%", padding: "12px 0", background: "linear-gradient(135deg, #3b82f6, #2563eb)",
             color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
-            cursor: loading ? "wait" : "pointer", opacity: loading ? 0.6 : 1,
+            cursor: loading || !captchaDone ? "not-allowed" : "pointer",
+            opacity: loading || !captchaDone ? 0.5 : 1,
             fontFamily: "'DM Sans',sans-serif",
           }}>{loading ? "A processar..." : isRegister ? "Criar conta" : "Entrar"}</button>
         </form>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: "#27272a" }} />
-          <span style={{ fontSize: 12, color: "#52525b" }}>ou</span>
-          <div style={{ flex: 1, height: 1, background: "#27272a" }} />
-        </div>
-
-        <button onClick={handleGoogle} disabled={loading} style={{
-          width: "100%", padding: "10px 0", border: "1px solid #27272a",
-          background: "#18181b", color: "#e4e4e7", borderRadius: 10,
-          cursor: "pointer", fontSize: 14, fontWeight: 500, marginBottom: 20,
-          fontFamily: "'DM Sans',sans-serif",
-        }}>Entrar com Google</button>
 
         <p style={{ fontSize: 13, color: "#52525b", textAlign: "center" }}>
           {isRegister ? "Já tens conta? " : "Não tens conta? "}
@@ -172,44 +179,25 @@ function LoginPage() {
 
 // ─── MAIN APP ───────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState(() => getSession());
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setAuthLoading(false);
-    });
-    return unsub;
-  }, []);
+  const handleLogin = (email) => setUser(email);
+  const handleLogout = () => { clearSession(); setUser(null); };
 
-  if (authLoading) {
-    return (
-      <div style={{
-        fontFamily: "'DM Sans', sans-serif", background: "#0c0d12",
-        color: "#e4e4e7", minHeight: "100vh", display: "flex",
-        alignItems: "center", justifyContent: "center",
-      }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-        <RefreshCw size={24} style={{ color: "#3b82f6", animation: "spin 1s linear infinite" }} />
-      </div>
-    );
-  }
+  if (!user) return <LoginPage onLogin={handleLogin} />;
 
-  if (!user) return <LoginPage />;
-
-  return <AppAuthed key={user.uid} user={user} />;
+  return <AppAuthed key={user} user={user} onLogout={handleLogout} />;
 }
 
 // ─── AUTHENTICATED APP ──────────────────────────────────────────────────────
-function AppAuthed({ user }) {
+function AppAuthed({ user, onLogout }) {
   // Per-user localStorage keys
+  const uid = userKey(user);
   const KEYS = useMemo(() => ({
-    clientes: `mm_clientes_${user.uid}`,
-    trabalhos: `mm_trabalhos_${user.uid}`,
-    consumos: `mm_consumos_${user.uid}`,
-  }), [user.uid]);
+    clientes: `mm_clientes_${uid}`,
+    trabalhos: `mm_trabalhos_${uid}`,
+    consumos: `mm_consumos_${uid}`,
+  }), [uid]);
 
   // One-time migration from old unscoped keys
   useMemo(() => {
@@ -452,7 +440,7 @@ function AppAuthed({ user }) {
     clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos,
     navigate, clienteNome, saldoMes, registarConsumo,
     showToast, modal, setModal, isMobile, isTablet, alertas,
-    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading, user, KEYS,
+    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading, user, KEYS, onLogout,
   };
 
   return (
@@ -491,7 +479,7 @@ function AppAuthed({ user }) {
             <span style={{ fontSize: 17, fontWeight: 700, color: "#f4f4f5" }}>Idealista Tracker</span>
             <span style={{ fontSize: 10, color: "#52525b", marginLeft: 8, fontFamily: "'JetBrains Mono',monospace" }}>v1.0</span>
           </div>
-          <button onClick={() => signOut(auth)} title="Sair" style={{
+          <button onClick={() => onLogout()} title="Sair" style={{
             background: "none", border: "none", color: "#71717a", cursor: "pointer", padding: 4,
           }}><LogOut size={18} /></button>
         </header>
@@ -526,8 +514,8 @@ function AppAuthed({ user }) {
               ))}
             </div>
             <div style={{ marginTop: "auto", padding: "12px 8px", borderTop: "1px solid #1e1f2a" }}>
-              {!isTablet && <div style={{ fontSize: 11, color: "#52525b", padding: "4px 12px", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>}
-              <button onClick={() => signOut(auth)} title="Sair" style={{
+              {!isTablet && <div style={{ fontSize: 11, color: "#52525b", padding: "4px 12px", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user}</div>}
+              <button onClick={() => onLogout()} title="Sair" style={{
                 display: "flex", alignItems: "center", justifyContent: isTablet ? "center" : "flex-start",
                 gap: 10, padding: isTablet ? "10px 0" : "10px 12px", border: "none",
                 background: "transparent", color: "#71717a", cursor: "pointer",
@@ -1426,7 +1414,7 @@ function RelatoriosPage({ clientes, trabalhos, consumos, saldoMes, mesAtual, cli
 }
 
 // ─── DEFINIÇÕES PAGE ─────────────────────────────────────────────────────────
-function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast, user, KEYS }) {
+function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast, user, KEYS, onLogout }) {
   const sectionStyle = {
     background: "#13141b", borderRadius: 14, border: "1px solid #1e1f2a",
     padding: isMobile ? 16 : 20, marginBottom: 16,
@@ -1451,8 +1439,8 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
       {/* ── CONTA ── */}
       <div style={sectionStyle}>
         <div style={headingStyle}><Users size={16} /> Conta</div>
-        <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 12 }}>{user.email}</div>
-        <button onClick={() => signOut(auth)} style={{ ...btnStyle, color: "#ef4444", borderColor: "#7f1d1d" }}>
+        <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 12 }}>{user}</div>
+        <button onClick={() => onLogout()} style={{ ...btnStyle, color: "#ef4444", borderColor: "#7f1d1d" }}>
           <LogOut size={14} /> Terminar sessão
         </button>
       </div>
