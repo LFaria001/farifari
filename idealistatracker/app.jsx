@@ -3,8 +3,13 @@ import {
   LayoutDashboard, Users, Briefcase, BarChart3, Plus, Search,
   Upload, CheckCircle, AlertTriangle, ChevronRight, X, Edit2,
   ArrowLeft, Trash2, Filter, Calendar, Download, ChevronLeft,
-  AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro
+  AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro, LogOut
 } from "lucide-react";
+import {
+  auth, googleProvider, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, signInWithPopup,
+  signOut, onAuthStateChanged,
+} from "./src/firebase.js";
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 const uid = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2, 11);
@@ -42,7 +47,6 @@ function valorPorTipo(tipo) {
 // ─── SEED DATA ──────────────────────────────────────────────────────────────
 
 // ─── STORAGE ────────────────────────────────────────────────────────────────
-const KEYS = { clientes: "mm_clientes", trabalhos: "mm_trabalhos", consumos: "mm_consumos" };
 function load(key, fb) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fb; } catch { return fb; } }
 function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
@@ -58,8 +62,168 @@ function useMedia(query) {
   return match;
 }
 
+// ─── LOGIN PAGE ─────────────────────────────────────────────────────────────
+function LoginPage() {
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(""); setLoading(true);
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err) {
+      const msgs = {
+        "auth/invalid-credential": "Email ou password incorretos.",
+        "auth/email-already-in-use": "Este email já está registado.",
+        "auth/weak-password": "A password deve ter pelo menos 6 caracteres.",
+        "auth/invalid-email": "Email inválido.",
+      };
+      setError(msgs[err.code] || err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleGoogle = async () => {
+    setError(""); setLoading(true);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      if (err.code !== "auth/popup-closed-by-user") setError("Erro ao entrar com Google.");
+    }
+    setLoading(false);
+  };
+
+  const iStyle = {
+    width: "100%", padding: "12px 14px", background: "#0c0d12", border: "1px solid #27272a",
+    borderRadius: 10, color: "#e4e4e7", fontSize: 14, outline: "none",
+    fontFamily: "'DM Sans',sans-serif",
+  };
+
+  return (
+    <div style={{
+      fontFamily: "'DM Sans', sans-serif", background: "#0c0d12",
+      color: "#e4e4e7", minHeight: "100vh", display: "flex",
+      alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px #3b82f614; outline: none; }`}</style>
+      <div style={{
+        background: "#13141b", border: "1px solid #1e1f2a",
+        borderRadius: 16, padding: 32, width: "100%", maxWidth: 400,
+      }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f4f4f5", marginBottom: 4 }}>Idealista Tracker</h1>
+        <p style={{ fontSize: 13, color: "#52525b", marginBottom: 24 }}>
+          {isRegister ? "Criar conta" : "Entrar na tua conta"}
+        </p>
+
+        {error && <div style={{
+          background: "#7f1d1d33", border: "1px solid #7f1d1d",
+          borderRadius: 8, padding: "8px 12px", fontSize: 13,
+          color: "#ef4444", marginBottom: 16,
+        }}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+          <input style={iStyle} type="email" placeholder="Email" value={email}
+            onChange={e => setEmail(e.target.value)} required />
+          <input style={iStyle} type="password" placeholder="Password" value={password}
+            onChange={e => setPassword(e.target.value)} required minLength={6} />
+          <button type="submit" disabled={loading} style={{
+            width: "100%", padding: "12px 0", background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+            color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600,
+            cursor: loading ? "wait" : "pointer", opacity: loading ? 0.6 : 1,
+            fontFamily: "'DM Sans',sans-serif",
+          }}>{loading ? "A processar..." : isRegister ? "Criar conta" : "Entrar"}</button>
+        </form>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div style={{ flex: 1, height: 1, background: "#27272a" }} />
+          <span style={{ fontSize: 12, color: "#52525b" }}>ou</span>
+          <div style={{ flex: 1, height: 1, background: "#27272a" }} />
+        </div>
+
+        <button onClick={handleGoogle} disabled={loading} style={{
+          width: "100%", padding: "10px 0", border: "1px solid #27272a",
+          background: "#18181b", color: "#e4e4e7", borderRadius: 10,
+          cursor: "pointer", fontSize: 14, fontWeight: 500, marginBottom: 20,
+          fontFamily: "'DM Sans',sans-serif",
+        }}>Entrar com Google</button>
+
+        <p style={{ fontSize: 13, color: "#52525b", textAlign: "center" }}>
+          {isRegister ? "Já tens conta? " : "Não tens conta? "}
+          <button onClick={() => { setIsRegister(!isRegister); setError(""); }} style={{
+            background: "none", border: "none", color: "#3b82f6",
+            cursor: "pointer", fontSize: 13, fontWeight: 500,
+            fontFamily: "'DM Sans',sans-serif",
+          }}>{isRegister ? "Entrar" : "Criar conta"}</button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ───────────────────────────────────────────────────────────────
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  if (authLoading) {
+    return (
+      <div style={{
+        fontFamily: "'DM Sans', sans-serif", background: "#0c0d12",
+        color: "#e4e4e7", minHeight: "100vh", display: "flex",
+        alignItems: "center", justifyContent: "center",
+      }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        <RefreshCw size={24} style={{ color: "#3b82f6", animation: "spin 1s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (!user) return <LoginPage />;
+
+  return <AppAuthed key={user.uid} user={user} />;
+}
+
+// ─── AUTHENTICATED APP ──────────────────────────────────────────────────────
+function AppAuthed({ user }) {
+  // Per-user localStorage keys
+  const KEYS = useMemo(() => ({
+    clientes: `mm_clientes_${user.uid}`,
+    trabalhos: `mm_trabalhos_${user.uid}`,
+    consumos: `mm_consumos_${user.uid}`,
+  }), [user.uid]);
+
+  // One-time migration from old unscoped keys
+  useMemo(() => {
+    const OLD = ["mm_clientes", "mm_trabalhos", "mm_consumos"];
+    const NEW = [KEYS.clientes, KEYS.trabalhos, KEYS.consumos];
+    if (OLD.some(k => localStorage.getItem(k)) && !NEW.some(k => localStorage.getItem(k))) {
+      OLD.forEach((ok, i) => {
+        const data = localStorage.getItem(ok);
+        if (data) localStorage.setItem(NEW[i], data);
+      });
+      OLD.forEach(k => localStorage.removeItem(k));
+    }
+  }, [KEYS]);
+
   const [clientes, setClientes] = useState(() => load(KEYS.clientes, []));
   const [trabalhos, setTrabalhos] = useState(() => load(KEYS.trabalhos, []));
   const [consumos, setConsumos] = useState(() => load(KEYS.consumos, []));
@@ -288,7 +452,7 @@ export default function App() {
     clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos,
     navigate, clienteNome, saldoMes, registarConsumo,
     showToast, modal, setModal, isMobile, isTablet, alertas,
-    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading,
+    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading, user, KEYS,
   };
 
   return (
@@ -321,9 +485,15 @@ export default function App() {
           position: "sticky", top: 0, zIndex: 100, background: "#13141bee",
           backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           borderBottom: "1px solid #1e1f2a", padding: "12px 16px",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <span style={{ fontSize: 17, fontWeight: 700, color: "#f4f4f5" }}>Idealista Tracker</span>
-          <span style={{ fontSize: 10, color: "#52525b", marginLeft: 8, fontFamily: "'JetBrains Mono',monospace" }}>v1.0</span>
+          <div>
+            <span style={{ fontSize: 17, fontWeight: 700, color: "#f4f4f5" }}>Idealista Tracker</span>
+            <span style={{ fontSize: 10, color: "#52525b", marginLeft: 8, fontFamily: "'JetBrains Mono',monospace" }}>v1.0</span>
+          </div>
+          <button onClick={() => signOut(auth)} title="Sair" style={{
+            background: "none", border: "none", color: "#71717a", cursor: "pointer", padding: 4,
+          }}><LogOut size={18} /></button>
         </header>
       )}
 
@@ -354,6 +524,15 @@ export default function App() {
                   borderRadius: 10, transition: "all 0.15s",
                 }}><p.icon size={18} /> {!isTablet && p.label}</button>
               ))}
+            </div>
+            <div style={{ marginTop: "auto", padding: "12px 8px", borderTop: "1px solid #1e1f2a" }}>
+              {!isTablet && <div style={{ fontSize: 11, color: "#52525b", padding: "4px 12px", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>}
+              <button onClick={() => signOut(auth)} title="Sair" style={{
+                display: "flex", alignItems: "center", justifyContent: isTablet ? "center" : "flex-start",
+                gap: 10, padding: isTablet ? "10px 0" : "10px 12px", border: "none",
+                background: "transparent", color: "#71717a", cursor: "pointer",
+                fontSize: 13, borderRadius: 10, width: "100%",
+              }}><LogOut size={16} /> {!isTablet && "Sair"}</button>
             </div>
           </nav>
         )}
@@ -1247,7 +1426,7 @@ function RelatoriosPage({ clientes, trabalhos, consumos, saldoMes, mesAtual, cli
 }
 
 // ─── DEFINIÇÕES PAGE ─────────────────────────────────────────────────────────
-function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast }) {
+function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast, user, KEYS }) {
   const sectionStyle = {
     background: "#13141b", borderRadius: 14, border: "1px solid #1e1f2a",
     padding: isMobile ? 16 : 20, marginBottom: 16,
@@ -1268,6 +1447,15 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
   return (
     <div style={{ padding: isMobile ? 16 : 24, maxWidth: 640 }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f4f4f5", marginBottom: 20 }}>Definições</h2>
+
+      {/* ── CONTA ── */}
+      <div style={sectionStyle}>
+        <div style={headingStyle}><Users size={16} /> Conta</div>
+        <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 12 }}>{user.email}</div>
+        <button onClick={() => signOut(auth)} style={{ ...btnStyle, color: "#ef4444", borderColor: "#7f1d1d" }}>
+          <LogOut size={14} /> Terminar sessão
+        </button>
+      </div>
 
       {/* ── SINCRONIZAÇÃO ── */}
       <div style={sectionStyle}>
@@ -1351,9 +1539,9 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <button onClick={() => {
             if (window.confirm("Tens a certeza? Isto apaga TODOS os dados da app (clientes, trabalhos, consumos). Esta ação não pode ser desfeita.")) {
-              localStorage.removeItem("mm_clientes");
-              localStorage.removeItem("mm_trabalhos");
-              localStorage.removeItem("mm_consumos");
+              localStorage.removeItem(KEYS.clientes);
+              localStorage.removeItem(KEYS.trabalhos);
+              localStorage.removeItem(KEYS.consumos);
               window.location.reload();
             }
           }} style={{
@@ -1363,8 +1551,8 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
           </button>
           <button onClick={() => {
             if (window.confirm("Isto remove todos os trabalhos mas mantém os clientes. Continuar?")) {
-              localStorage.removeItem("mm_trabalhos");
-              localStorage.removeItem("mm_consumos");
+              localStorage.removeItem(KEYS.trabalhos);
+              localStorage.removeItem(KEYS.consumos);
               window.location.reload();
             }
           }} style={{
@@ -1374,7 +1562,7 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
           </button>
           <button onClick={() => {
             if (window.confirm("Isto remove todos os clientes mas mantém os trabalhos. Continuar?")) {
-              localStorage.removeItem("mm_clientes");
+              localStorage.removeItem(KEYS.clientes);
               window.location.reload();
             }
           }} style={{
