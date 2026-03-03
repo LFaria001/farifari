@@ -1039,10 +1039,18 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
     if (!window.confirm("Tens a certeza que queres guardar?")) return;
     if (editId) {
       setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...form, valor: form.valor ? +form.valor : null } : t));
-      // Re-register consumption with updated type/period/client
+      // Re-register consumption with updated type/period/client (single atomic update)
       const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
-      setConsumos(p => p.filter(c => c.trabalho_id !== editId));
-      if (form.cliente_id) registarConsumo(editId, form.cliente_id, form.tipo_multimedia, periodo);
+      const custos = creditosPorTipo(form.tipo_multimedia);
+      setConsumos(p => {
+        const filtered = p.filter(c => c.trabalho_id !== editId);
+        if (!form.cliente_id) return filtered;
+        return [...filtered, {
+          id: uid(), trabalho_id: editId, cliente_id: form.cliente_id, periodo,
+          delta_vt: -custos.vt, delta_video: -custos.video, delta_3d: -custos["3d"],
+          timestamp: now(), observacoes: `${form.tipo_multimedia}`
+        }];
+      });
       showToast("Atualizado.", "success");
     }
     else {
