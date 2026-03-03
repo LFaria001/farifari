@@ -6,18 +6,9 @@ import {
   AlertCircle, Info, Check, XCircle, ExternalLink, RefreshCw, Settings, Euro, LogOut
 } from "lucide-react";
 
-// ─── AUTH HELPERS ────────────────────────────────────────────────────────────
-const RECAPTCHA_SITE_KEY = "YOUR_RECAPTCHA_SITE_KEY"; // TODO: substituir pela tua site key do Google reCAPTCHA v2
-const hashPassword = async (pw) => {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-};
-const getUsers = () => { try { return JSON.parse(localStorage.getItem("mm_auth_users") || "[]"); } catch { return []; } };
-const saveUsers = (users) => localStorage.setItem("mm_auth_users", JSON.stringify(users));
-const getSession = () => localStorage.getItem("mm_auth_session");
-const setSession = (email) => localStorage.setItem("mm_auth_session", email);
-const clearSession = () => localStorage.removeItem("mm_auth_session");
-const userKey = (email) => email.toLowerCase().replace(/[^a-z0-9]/g, "_");
+// ─── API ─────────────────────────────────────────────────────────────────────
+import * as api from "./src/api.js";
+const RECAPTCHA_SITE_KEY = "6LfBRH4sAAAAAEMPghJxhWoZoasZUn57TD5sIkiz";
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 const uid = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2, 11);
@@ -54,9 +45,7 @@ function valorPorTipo(tipo) {
 
 // ─── SEED DATA ──────────────────────────────────────────────────────────────
 
-// ─── STORAGE ────────────────────────────────────────────────────────────────
-function load(key, fb) { try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fb; } catch { return fb; } }
-function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+// ─── STORAGE (removed — now using API) ──────────────────────────────────────
 
 // ─── useMediaQuery ──────────────────────────────────────────────────────────
 function useMedia(query) {
@@ -97,21 +86,11 @@ function LoginPage({ onLogin }) {
     if (!captchaDone) { setError("Completa o reCAPTCHA."); return; }
     setError(""); setLoading(true);
     try {
-      const users = getUsers();
-      const hash = await hashPassword(password);
-      if (isRegister) {
-        if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-          setError("Este email já está registado."); setLoading(false); return;
-        }
-        if (password.length < 6) { setError("A password deve ter pelo menos 6 caracteres."); setLoading(false); return; }
-        saveUsers([...users, { email: email.toLowerCase(), passwordHash: hash }]);
-      } else {
-        const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === hash);
-        if (!found) { setError("Email ou password incorretos."); setLoading(false); return; }
-      }
-      setSession(email.toLowerCase());
-      onLogin(email.toLowerCase());
-    } catch { setError("Erro inesperado."); }
+      const token = window.grecaptcha?.getResponse?.() || "";
+      const fn = isRegister ? api.authRegister : api.authLogin;
+      const { user } = await fn(email, password, token);
+      onLogin(user);
+    } catch (err) { setError(err.message || "Erro inesperado."); }
     setLoading(false);
   };
 
@@ -179,42 +158,33 @@ function LoginPage({ onLogin }) {
 
 // ─── MAIN APP ───────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(() => getSession());
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const handleLogin = (email) => setUser(email);
-  const handleLogout = () => { clearSession(); setUser(null); };
+  useEffect(() => {
+    api.authMe().then(({ user }) => setUser(user)).catch(() => {}).finally(() => setAuthLoading(false));
+  }, []);
+
+  const handleLogin = (u) => setUser(u);
+  const handleLogout = async () => { await api.authLogout().catch(() => {}); setUser(null); };
+
+  if (authLoading) return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0c0d12", color: "#a1a1aa", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      A carregar...
+    </div>
+  );
 
   if (!user) return <LoginPage onLogin={handleLogin} />;
 
-  return <AppAuthed key={user} user={user} onLogout={handleLogout} />;
+  return <AppAuthed key={user.id} user={user} onLogout={handleLogout} />;
 }
 
 // ─── AUTHENTICATED APP ──────────────────────────────────────────────────────
 function AppAuthed({ user, onLogout }) {
-  // Per-user localStorage keys
-  const uid = userKey(user);
-  const KEYS = useMemo(() => ({
-    clientes: `mm_clientes_${uid}`,
-    trabalhos: `mm_trabalhos_${uid}`,
-    consumos: `mm_consumos_${uid}`,
-  }), [uid]);
-
-  // One-time migration from old unscoped keys
-  useMemo(() => {
-    const OLD = ["mm_clientes", "mm_trabalhos", "mm_consumos"];
-    const NEW = [KEYS.clientes, KEYS.trabalhos, KEYS.consumos];
-    if (OLD.some(k => localStorage.getItem(k)) && !NEW.some(k => localStorage.getItem(k))) {
-      OLD.forEach((ok, i) => {
-        const data = localStorage.getItem(ok);
-        if (data) localStorage.setItem(NEW[i], data);
-      });
-      OLD.forEach(k => localStorage.removeItem(k));
-    }
-  }, [KEYS]);
-
-  const [clientes, setClientes] = useState(() => load(KEYS.clientes, []));
-  const [trabalhos, setTrabalhos] = useState(() => load(KEYS.trabalhos, []));
-  const [consumos, setConsumos] = useState(() => load(KEYS.consumos, []));
+  const [clientes, setClientes] = useState([]);
+  const [trabalhos, setTrabalhos] = useState([]);
+  const [consumos, setConsumos] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [page, setPage] = useState("dashboard");
   const [subPage, setSubPage] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -226,11 +196,13 @@ function AppAuthed({ user, onLogout }) {
   const isTablet = useMedia("(max-width: 1024px)");
   const mesAtualGlobal = mesAno(new Date());
 
-  const mounted = useRef(false);
-  useEffect(() => { if (mounted.current) save(KEYS.clientes, clientes); }, [clientes]);
-  useEffect(() => { if (mounted.current) save(KEYS.trabalhos, trabalhos); }, [trabalhos]);
-  useEffect(() => { if (mounted.current) save(KEYS.consumos, consumos); }, [consumos]);
-  useEffect(() => { mounted.current = true; }, []);
+  // Load data from API on mount
+  useEffect(() => {
+    Promise.all([api.getClientes(), api.getTrabalhos(), api.getConsumos()])
+      .then(([c, t, co]) => { setClientes(c); setTrabalhos(t); setConsumos(co); })
+      .catch(() => {})
+      .finally(() => setDataLoading(false));
+  }, []);
 
   const showToast = useCallback((msg, type = "info") => {
     setToast({ msg, type });
@@ -262,13 +234,15 @@ function AppAuthed({ user, onLogout }) {
     };
   }, [clientes, consumos]);
 
-  const registarConsumo = useCallback((trabalhoId, clienteId, tipo, periodo) => {
+  const registarConsumo = useCallback(async (trabalhoId, clienteId, tipo, periodo) => {
     const custos = creditosPorTipo(tipo);
-    setConsumos(prev => [...prev, {
-      id: uid(), trabalho_id: trabalhoId, cliente_id: clienteId, periodo: periodo,
+    const consumo = {
+      id: uid(), trabalho_id: trabalhoId, cliente_id: clienteId, periodo,
       delta_vt: -custos.vt, delta_video: -custos.video, delta_3d: -custos["3d"],
       timestamp: now(), observacoes: `${tipo}`
-    }]);
+    };
+    setConsumos(prev => [...prev, consumo]);
+    try { await api.createConsumo(consumo); } catch {}
   }, []);
 
 
@@ -409,8 +383,11 @@ function AppAuthed({ user, onLogout }) {
       const seen = new Set();
       const novosClientes = parseClientesFromSheet(wbCli, existingNames, seen);
 
-      // Add new clients
-      if (novosClientes.length) setClientes(prev => [...prev, ...novosClientes]);
+      // Add new clients (save each to API)
+      if (novosClientes.length) {
+        for (const nc of novosClientes) { try { await api.createCliente(nc); } catch {} }
+        setClientes(prev => [...prev, ...novosClientes]);
+      }
 
       const msgs = [];
       if (novosClientes.length) msgs.push(`${novosClientes.length} cliente(s)`);
@@ -440,7 +417,7 @@ function AppAuthed({ user, onLogout }) {
     clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos,
     navigate, clienteNome, saldoMes, registarConsumo,
     showToast, modal, setModal, isMobile, isTablet, alertas,
-    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading, user, KEYS, onLogout,
+    mesAtual: mesAtualGlobal, sincronizarSheets, syncLoading, user, onLogout, dataLoading,
   };
 
   return (
@@ -514,7 +491,7 @@ function AppAuthed({ user, onLogout }) {
               ))}
             </div>
             <div style={{ marginTop: "auto", padding: "12px 8px", borderTop: "1px solid #1e1f2a" }}>
-              {!isTablet && <div style={{ fontSize: 11, color: "#52525b", padding: "4px 12px", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user}</div>}
+              {!isTablet && <div style={{ fontSize: 11, color: "#52525b", padding: "4px 12px", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>}
               <button onClick={() => onLogout()} title="Sair" style={{
                 display: "flex", alignItems: "center", justifyContent: isTablet ? "center" : "flex-start",
                 gap: 10, padding: isTablet ? "10px 0" : "10px 12px", border: "none",
@@ -532,6 +509,7 @@ function AppAuthed({ user, onLogout }) {
           maxHeight: isMobile ? "none" : "100vh",
           overflowY: isMobile ? "visible" : "auto",
         }}>
+          {dataLoading ? <div style={{ padding: 40, textAlign: "center", color: "#71717a" }}>A carregar dados...</div> : <>
           {page === "dashboard" && <DashboardPage {...ctx} />}
           {page === "clientes" && !subPage && <ClientesLista {...ctx} />}
           {page === "clientes" && subPage === "detalhe" && <ClienteDetalhe clienteId={selectedId} {...ctx} />}
@@ -542,6 +520,7 @@ function AppAuthed({ user, onLogout }) {
           {page === "trabalhos" && subPage === "editar" && <TrabalhoForm editId={selectedId} {...ctx} />}
           {page === "relatorios" && <RelatoriosPage {...ctx} />}
           {page === "definicoes" && <DefinicoesPage {...ctx} />}
+          </>}
         </main>
       </div>
 
@@ -986,14 +965,24 @@ function ClienteForm({ clientes, setClientes, navigate, showToast, editId, isMob
   const FP = (f, v) => setForm(p => ({ ...p, plano_mensal: { ...p.plano_mensal, [f]: +v || 0 } }));
 
   const hasMultimedia = form.plano_mensal.creditos_vt > 0 || form.plano_mensal.creditos_video > 0 || form.plano_mensal.creditos_3d > 0;
-  const save = () => {
+  const save = async () => {
     if (!form.id_cliente?.trim()) { showToast("ID Cliente é obrigatório.", "error"); return; }
     if (!form.nome_agencia?.trim()) { showToast("Agência é obrigatória.", "error"); return; }
     if (!hasMultimedia) { showToast("Seleciona pelo menos um conteúdo multimédia.", "error"); return; }
     if (!window.confirm("Tens a certeza que queres guardar?")) return;
-    if (editId) { setClientes(p => p.map(c => c.id === editId ? { ...c, ...form } : c)); showToast("Atualizado.", "success"); }
-    else { setClientes(p => [...p, { ...form, id: uid() }]); showToast("Criado.", "success"); }
-    navigate("clientes");
+    try {
+      if (editId) {
+        await api.updateCliente(editId, form);
+        setClientes(p => p.map(c => c.id === editId ? { ...c, ...form } : c));
+        showToast("Atualizado.", "success");
+      } else {
+        const newCliente = { ...form, id: uid() };
+        await api.createCliente(newCliente);
+        setClientes(p => [...p, newCliente]);
+        showToast("Criado.", "success");
+      }
+      navigate("clientes");
+    } catch (err) { showToast(err.message || "Erro ao guardar.", "error"); }
   };
 
   return (
@@ -1036,7 +1025,7 @@ function ClienteForm({ clientes, setClientes, navigate, showToast, editId, isMob
 }
 
 // ─── TRABALHOS LISTA ────────────────────────────────────────────────────────
-function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, navigate, showToast, modal, setModal, isMobile, setConsumos }) {
+function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, navigate, showToast, modal, setModal, isMobile, setConsumos, consumos }) {
   const [search, setSearch] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
   const [filtroCliente, setFiltroCliente] = useState("");
@@ -1054,14 +1043,20 @@ function TrabalhosLista({ trabalhos, setTrabalhos, clientes, clienteNome, naviga
     }).sort((a, b) => new Date(b.data_trabalho) - new Date(a.data_trabalho));
   }, [trabalhos, filtroEstado, filtroCliente, search, clienteNome]);
 
-  const handleAction = (action, t) => {
+  const handleAction = async (action, t) => {
     if (action === "editar") navigate("trabalhos", "editar", t.id);
     else if (action === "upload") setModal({ type: "upload", trabalho: t });
     else if (action === "apagar") {
       if (window.confirm("Tens a certeza que queres apagar este trabalho?")) {
-        setTrabalhos(p => p.filter(tr => tr.id !== t.id));
-        setConsumos(p => p.filter(c => c.trabalho_id !== t.id));
-        showToast("Trabalho apagado.", "success");
+        try {
+          await api.deleteTrabalho(t.id);
+          // Delete associated consumos via API
+          const related = consumos?.filter(c => c.trabalho_id === t.id) || [];
+          for (const c of related) { try { await api.deleteConsumo(c.id); } catch {} }
+          setTrabalhos(p => p.filter(tr => tr.id !== t.id));
+          setConsumos(p => p.filter(c => c.trabalho_id !== t.id));
+          showToast("Trabalho apagado.", "success");
+        } catch (err) { showToast(err.message || "Erro ao apagar.", "error"); }
       }
     }
   };
@@ -1152,14 +1147,15 @@ function ModalUpload({ trabalho, onClose, setTrabalhos, showToast, clienteNome, 
   const [idSistema, setIdSistema] = useState(trabalho.id_sistema || "");
   const [morada, setMorada] = useState(trabalho.morada || "");
 
-  const confirmar = () => {
+  const confirmar = async () => {
     if (!idSistema.trim() && !morada.trim()) { showToast("Preenche o ID do anúncio ou a morada.", "error"); return; }
-    setTrabalhos(prev => prev.map(t => t.id === trabalho.id ? {
-      ...t, estado_trabalho: "Upload feito", data_upload: now(),
-      id_sistema: idSistema.trim(), morada: morada.trim()
-    } : t));
-    showToast("Upload registado!", "success");
-    onClose();
+    const updated = { ...trabalho, estado_trabalho: "Upload feito", data_upload: now(), id_sistema: idSistema.trim(), morada: morada.trim() };
+    try {
+      await api.updateTrabalho(trabalho.id, updated);
+      setTrabalhos(prev => prev.map(t => t.id === trabalho.id ? updated : t));
+      showToast("Upload registado!", "success");
+      onClose();
+    } catch (err) { showToast(err.message || "Erro ao registar upload.", "error"); }
   };
 
   return (
@@ -1183,7 +1179,7 @@ function ModalUpload({ trabalho, onClose, setTrabalhos, showToast, clienteNome, 
 }
 
 // ─── TRABALHO FORM ──────────────────────────────────────────────────────────
-function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, editId, isMobile, registarConsumo, setConsumos }) {
+function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, editId, isMobile, registarConsumo, setConsumos, consumos }) {
   const existing = editId ? trabalhos.find(t => t.id === editId) : null;
   const existingCliente = existing ? clientes.find(c => c.id === existing.cliente_id) : null;
   const [agenciaSearch, setAgenciaSearch] = useState(existingCliente?.nome_agencia || "");
@@ -1196,7 +1192,7 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
   });
   const F = (f, v) => setForm(p => ({ ...p, [f]: v }));
 
-  const save = () => {
+  const save = async () => {
     if (!form.data_trabalho) { showToast("Data é obrigatória.", "error"); return; }
     if (!form.cliente_id) { showToast("Agência é obrigatória.", "error"); return; }
     if (!form.tipo_multimedia) { showToast("Conteúdos Multimédia é obrigatório.", "error"); return; }
@@ -1204,30 +1200,40 @@ function TrabalhoForm({ trabalhos, setTrabalhos, clientes, navigate, showToast, 
     if (idMode === "morada" && !form.morada?.trim()) { showToast("Morada é obrigatória.", "error"); return; }
     if (!form.local?.trim()) { showToast("Local é obrigatório.", "error"); return; }
     if (!window.confirm("Tens a certeza que queres guardar?")) return;
-    if (editId) {
-      setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...form, valor: form.valor ? +form.valor : null } : t));
-      // Re-register consumption with updated type/period/client (single atomic update)
-      const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
-      const custos = creditosPorTipo(form.tipo_multimedia);
-      setConsumos(p => {
-        const filtered = p.filter(c => c.trabalho_id !== editId);
-        if (!form.cliente_id) return filtered;
-        return [...filtered, {
-          id: uid(), trabalho_id: editId, cliente_id: form.cliente_id, periodo,
-          delta_vt: -custos.vt, delta_video: -custos.video, delta_3d: -custos["3d"],
-          timestamp: now(), observacoes: `${form.tipo_multimedia}`
-        }];
-      });
-      showToast("Atualizado.", "success");
-    }
-    else {
-      const newId = uid();
-      const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
-      setTrabalhos(p => [...p, { ...form, id: newId, valor: form.valor ? +form.valor : null }]);
-      if (form.cliente_id) registarConsumo(newId, form.cliente_id, form.tipo_multimedia, periodo);
-      showToast("Criado.", "success");
-    }
-    navigate("trabalhos");
+    try {
+      if (editId) {
+        const updated = { ...form, valor: form.valor ? +form.valor : null };
+        await api.updateTrabalho(editId, updated);
+        setTrabalhos(p => p.map(t => t.id === editId ? { ...t, ...updated } : t));
+        // Re-register consumption with updated type/period/client
+        const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
+        const custos = creditosPorTipo(form.tipo_multimedia);
+        // Delete old consumos for this trabalho via API
+        const oldConsumos = consumos.filter(c => c.trabalho_id === editId);
+        for (const oc of oldConsumos) { try { await api.deleteConsumo(oc.id); } catch {} }
+        if (form.cliente_id) {
+          const newConsumo = {
+            id: uid(), trabalho_id: editId, cliente_id: form.cliente_id, periodo,
+            delta_vt: -custos.vt, delta_video: -custos.video, delta_3d: -custos["3d"],
+            timestamp: now(), observacoes: `${form.tipo_multimedia}`
+          };
+          await api.createConsumo(newConsumo);
+          setConsumos(p => [...p.filter(c => c.trabalho_id !== editId), newConsumo]);
+        } else {
+          setConsumos(p => p.filter(c => c.trabalho_id !== editId));
+        }
+        showToast("Atualizado.", "success");
+      } else {
+        const newId = uid();
+        const newTrabalho = { ...form, id: newId, valor: form.valor ? +form.valor : null };
+        await api.createTrabalho(newTrabalho);
+        setTrabalhos(p => [...p, newTrabalho]);
+        const periodo = form.mes_referencia || mesAno(form.data_trabalho || new Date());
+        if (form.cliente_id) await registarConsumo(newId, form.cliente_id, form.tipo_multimedia, periodo);
+        showToast("Criado.", "success");
+      }
+      navigate("trabalhos");
+    } catch (err) { showToast(err.message || "Erro ao guardar.", "error"); }
   };
 
   return (
@@ -1414,7 +1420,7 @@ function RelatoriosPage({ clientes, trabalhos, consumos, saldoMes, mesAtual, cli
 }
 
 // ─── DEFINIÇÕES PAGE ─────────────────────────────────────────────────────────
-function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast, user, KEYS, onLogout }) {
+function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consumos, setConsumos, sincronizarSheets, syncLoading, isMobile, showToast, user, onLogout }) {
   const sectionStyle = {
     background: "#13141b", borderRadius: 14, border: "1px solid #1e1f2a",
     padding: isMobile ? 16 : 20, marginBottom: 16,
@@ -1439,7 +1445,7 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
       {/* ── CONTA ── */}
       <div style={sectionStyle}>
         <div style={headingStyle}><Users size={16} /> Conta</div>
-        <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 12 }}>{user}</div>
+        <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 12 }}>{user.email}</div>
         <button onClick={() => onLogout()} style={{ ...btnStyle, color: "#ef4444", borderColor: "#7f1d1d" }}>
           <LogOut size={14} /> Terminar sessão
         </button>
@@ -1484,32 +1490,33 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
           Exporta ou restaura todos os dados da app.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <button onClick={() => {
-            const data = JSON.stringify({ clientes, trabalhos, consumos }, null, 2);
-            const blob = new Blob([data], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = `idealista-backup-${new Date().toISOString().slice(0, 10)}.json`;
-            a.click(); URL.revokeObjectURL(url);
+          <button onClick={async () => {
+            try {
+              const backup = await api.exportBackup();
+              const data = JSON.stringify(backup, null, 2);
+              const blob = new Blob([data], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = `idealista-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click(); URL.revokeObjectURL(url);
+            } catch (err) { showToast(err.message || "Erro ao exportar.", "error"); }
           }} style={{ ...btnStyle, color: "#3b82f6", borderColor: "#1e40af" }}>
             <Download size={14} /> Exportar JSON
           </button>
           <button onClick={() => {
             const input = document.createElement("input");
             input.type = "file"; input.accept = ".json";
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
               const file = e.target.files[0]; if (!file) return;
-              const reader = new FileReader();
-              reader.onload = (ev) => {
-                try {
-                  const d = JSON.parse(ev.target.result);
-                  if (!d.clientes || !d.trabalhos || !d.consumos) { showToast("Ficheiro inválido.", "error"); return; }
-                  if (!window.confirm(`Importar ${d.clientes.length} clientes, ${d.trabalhos.length} trabalhos e ${d.consumos.length} consumos? Isto substitui todos os dados atuais.`)) return;
-                  setClientes(d.clientes); setTrabalhos(d.trabalhos); setConsumos(d.consumos);
-                  showToast("Dados importados com sucesso!", "success");
-                } catch { showToast("Erro ao ler ficheiro.", "error"); }
-              };
-              reader.readAsText(file);
+              try {
+                const text = await file.text();
+                const d = JSON.parse(text);
+                if (!d.clientes || !d.trabalhos || !d.consumos) { showToast("Ficheiro inválido.", "error"); return; }
+                if (!window.confirm(`Importar ${d.clientes.length} clientes, ${d.trabalhos.length} trabalhos e ${d.consumos.length} consumos? Isto substitui todos os dados atuais.`)) return;
+                await api.importBackup(d);
+                setClientes(d.clientes); setTrabalhos(d.trabalhos); setConsumos(d.consumos);
+                showToast("Dados importados com sucesso!", "success");
+              } catch { showToast("Erro ao importar.", "error"); }
             };
             input.click();
           }} style={{ ...btnStyle, color: "#8b5cf6", borderColor: "#5b21b6" }}>
@@ -1525,33 +1532,40 @@ function DefinicoesPage({ clientes, setClientes, trabalhos, setTrabalhos, consum
           Ações irreversíveis. Usa com cuidado.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          <button onClick={() => {
+          <button onClick={async () => {
             if (window.confirm("Tens a certeza? Isto apaga TODOS os dados da app (clientes, trabalhos, consumos). Esta ação não pode ser desfeita.")) {
-              localStorage.removeItem(KEYS.clientes);
-              localStorage.removeItem(KEYS.trabalhos);
-              localStorage.removeItem(KEYS.consumos);
-              window.location.reload();
+              try {
+                await api.deleteAllData();
+                setClientes([]); setTrabalhos([]); setConsumos([]);
+                showToast("Todos os dados apagados.", "success");
+              } catch (err) { showToast(err.message || "Erro ao apagar.", "error"); }
             }
           }} style={{
             ...btnStyle, color: "#ef4444", borderColor: "#7f1d1d",
           }}>
             <Trash2 size={14} /> Apagar todos os dados
           </button>
-          <button onClick={() => {
+          <button onClick={async () => {
             if (window.confirm("Isto remove todos os trabalhos mas mantém os clientes. Continuar?")) {
-              localStorage.removeItem(KEYS.trabalhos);
-              localStorage.removeItem(KEYS.consumos);
-              window.location.reload();
+              try {
+                // Import with empty trabalhos/consumos but keep clientes
+                await api.importBackup({ clientes, trabalhos: [], consumos: [] });
+                setTrabalhos([]); setConsumos([]);
+                showToast("Trabalhos apagados.", "success");
+              } catch (err) { showToast(err.message || "Erro ao apagar.", "error"); }
             }
           }} style={{
             ...btnStyle, color: "#f59e0b", borderColor: "#78350f",
           }}>
             <Trash2 size={14} /> Apagar só trabalhos
           </button>
-          <button onClick={() => {
+          <button onClick={async () => {
             if (window.confirm("Isto remove todos os clientes mas mantém os trabalhos. Continuar?")) {
-              localStorage.removeItem(KEYS.clientes);
-              window.location.reload();
+              try {
+                await api.importBackup({ clientes: [], trabalhos, consumos });
+                setClientes([]);
+                showToast("Clientes apagados.", "success");
+              } catch (err) { showToast(err.message || "Erro ao apagar.", "error"); }
             }
           }} style={{
             ...btnStyle, color: "#f59e0b", borderColor: "#78350f",
